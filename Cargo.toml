@@ -2,5 +2,26 @@
 name = "natsort-rs"
 version = "0.1.0"
 edition = "2024"
+rust-version = "1.85"
+description = "A Rust port of Python's natsort: natural sorting for strings with embedded numbers"
+license = "MIT"
+repository = "https://github.com/harshalmore31/natsort-rs"
+readme = "README.md"
+keywords = ["natsort", "natural", "sort", "sorting", "alphanum"]
+categories = ["algorithms", "text-processing"]
+
+# The library is named `natsort` so downstream code reads `use natsort::natsorted;`,
+# mirroring the Python `import natsort` ergonomics.
+[lib]
+name = "natsort"
+path = "src/lib.rs"
 
 [dependencies]
+bitflags = "2.6"
+regex = "1.10"
+thiserror = "2.0"
+unicase = "2.7"
+
+[dev-dependencies]
+criterion = "0.5"
+pyo3 = { version = "0.22", features = ["auto-initialize"] }
