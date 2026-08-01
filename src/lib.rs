@@ -23,6 +23,7 @@
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
 
+pub mod bytes;
 pub mod error;
 pub mod keygen;
 pub mod locale;
@@ -32,6 +33,7 @@ pub mod os_sort;
 pub mod recursive;
 pub mod segment;
 
+pub use bytes::{decode_bytes, decode_bytes_ascii, natsorted_bytes, natsorted_bytes_ignorecase};
 pub use error::{Error, Result};
 pub use keygen::NatsortKey;
 pub use locale::LocaleStr;

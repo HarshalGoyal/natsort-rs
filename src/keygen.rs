@@ -66,7 +66,20 @@ impl NatsortKey {
             input.to_string()
         };
 
-        let parts = self.split_key(&transformed);
+        let parts = if self.flags.contains(NsFlags::PATH) {
+            // PATH mode: split by directory separators, apply key to each component.
+            let mut all_parts = Vec::new();
+            for component in transformed.split(['/', '\\']) {
+                if component.is_empty() {
+                    continue;
+                }
+                let comp_parts = self.split_key(component);
+                all_parts.extend(comp_parts);
+            }
+            all_parts
+        } else {
+            self.split_key(&transformed)
+        };
 
         // Apply NUMAFTER separator if needed.
         let parts = if self.flags.contains(NsFlags::NUMAFTER) && !parts.is_empty() {
