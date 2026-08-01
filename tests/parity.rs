@@ -273,3 +273,192 @@ fn parity_larger_dataset() {
 
     assert_eq!(rs_result, py_result, "Larger dataset output differs from Python");
 }
+
+// ── Phase 2 parity tests ───────────────────────────────────────
+
+/// Mixed types: [10, "2", 3.5, "apple"] → ["2", 3.5, 10, "apple"].
+#[test]
+fn parity_mixed_types() {
+    let data = vec![
+        natsort::Item::Int(10),
+        natsort::Item::Str("2".to_string()),
+        natsort::Item::Float(3.5),
+        natsort::Item::Str("apple".to_string()),
+    ];
+    let rs_result = natsort::natsorted_mixed(&data);
+
+    // Python order: numbers before strings, then by value.
+    assert_eq!(rs_result[0], natsort::Item::Str("2".to_string()));
+    assert!(matches!(&rs_result[1], natsort::Item::Float(f) if (*f - 3.5).abs() < f64::EPSILON));
+    assert_eq!(rs_result[2], natsort::Item::Int(10));
+    assert_eq!(rs_result[3], natsort::Item::Str("apple".to_string()));
+}
+
+/// None values sort first.
+#[test]
+fn parity_none_first() {
+    let data = vec![
+        natsort::Item::Str("b".to_string()),
+        natsort::Item::NoneVal,
+        natsort::Item::Int(3),
+        natsort::Item::NoneVal,
+        natsort::Item::Str("a".to_string()),
+    ];
+    let rs_result = natsort::natsorted_mixed(&data);
+
+    // First two should be None values
+    assert_eq!(rs_result[0], natsort::Item::NoneVal);
+    assert_eq!(rs_result[1], natsort::Item::NoneVal);
+}
+
+/// NaN handling: default puts NaN first, NANLAST puts it last.
+#[test]
+fn parity_nan_handling() {
+    let data_default = vec![
+        natsort::Item::Float(1.0),
+        natsort::Item::Float(f64::NAN),
+        natsort::Item::Float(2.0),
+    ];
+    let result_default = natsort::natsorted_mixed(&data_default);
+    // Default: NaN → -inf, sorts first.
+    assert!(result_default.first().unwrap().is_nan());
+
+    let result_last = natsort::natsorted_mixed_with(&data_default, NsFlags::NANLAST);
+    // NANLAST: NaN → +inf, sorts last.
+    assert!(result_last.last().unwrap().is_nan());
+}
+
+/// NUMAFTER: numbers after letters.
+#[test]
+fn parity_numafter() {
+    let data = vec!["b", "2", "a", "1"];
+    let rs_result = natsorted_with(&data, NsFlags::NUMAFTER);
+
+    let py_result: Vec<String> = Python::with_gil(|py| {
+        let natsort_mod = py_natsort(py);
+        let ns = natsort_mod.getattr("ns").expect("ns exists");
+        let na = ns.getattr("NUMAFTER").expect("NUMAFTER exists");
+        let kwargs = pyo3::types::PyDict::new_bound(py);
+        kwargs.set_item("alg", na).unwrap();
+        natsort_mod
+            .call_method("natsorted", (data.clone(),), Some(&kwargs))
+            .expect("natsorted with NUMAFTER works")
+            .extract()
+            .expect("returns list of str")
+    });
+
+    assert_eq!(rs_result, py_result, "NUMAFTER output differs from Python");
+}
+
+/// PRESORT: breaks ties by string value for stable sort.
+#[test]
+fn parity_presort() {
+    let data = vec!["a1", "a01", "a2"];
+    let rs_result = natsorted_with(&data, NsFlags::PRESORT);
+
+    let py_result: Vec<String> = Python::with_gil(|py| {
+        let natsort_mod = py_natsort(py);
+        let ns = natsort_mod.getattr("ns").expect("ns exists");
+        let ps = ns.getattr("PRESORT").expect("PRESORT exists");
+        let kwargs = pyo3::types::PyDict::new_bound(py);
+        kwargs.set_item("alg", ps).unwrap();
+        natsort_mod
+            .call_method("natsorted", (data.clone(),), Some(&kwargs))
+            .expect("natsorted with PRESORT works")
+            .extract()
+            .expect("returns list of str")
+    });
+
+    assert_eq!(rs_result, py_result, "PRESORT output differs from Python");
+}
+
+/// GROUPLETTERS: groups uppercase and lowercase together.
+#[test]
+fn parity_groupletters() {
+    let data = vec!["Banana", "apple", "banana", "Apple"];
+    let rs_result = natsorted_with(&data, NsFlags::GROUPLETTERS);
+
+    let py_result: Vec<String> = Python::with_gil(|py| {
+        let natsort_mod = py_natsort(py);
+        let ns = natsort_mod.getattr("ns").expect("ns exists");
+        let gl = ns.getattr("GROUPLETTERS").expect("GROUPLETTERS exists");
+        let kwargs = pyo3::types::PyDict::new_bound(py);
+        kwargs.set_item("alg", gl).unwrap();
+        natsort_mod
+            .call_method("natsorted", (data.clone(),), Some(&kwargs))
+            .expect("natsorted with GROUPLETTERS works")
+            .extract()
+            .expect("returns list of str")
+    });
+
+    assert_eq!(rs_result, py_result, "GROUPLETTERS output differs from Python");
+}
+
+/// LOWERCASEFIRST: lowercase before uppercase.
+#[test]
+fn parity_lowercasefirst() {
+    let data = vec!["Banana", "apple", "banana", "Apple"];
+    let rs_result = natsorted_with(&data, NsFlags::LOWERCASEFIRST);
+
+    let py_result: Vec<String> = Python::with_gil(|py| {
+        let natsort_mod = py_natsort(py);
+        let ns = natsort_mod.getattr("ns").expect("ns exists");
+        let lf = ns.getattr("LOWERCASEFIRST").expect("LOWERCASEFIRST exists");
+        let kwargs = pyo3::types::PyDict::new_bound(py);
+        kwargs.set_item("alg", lf).unwrap();
+        natsort_mod
+            .call_method("natsorted", (data.clone(),), Some(&kwargs))
+            .expect("natsorted with LOWERCASEFIRST works")
+            .extract()
+            .expect("returns list of str")
+    });
+
+    assert_eq!(rs_result, py_result, "LOWERCASEFIRST output differs from Python");
+}
+
+/// Recursive descent: sorting nested lists.
+#[test]
+fn parity_recursive_descent() {
+    let data = vec![
+        natsort::NestedItem::branch(vec![
+            natsort::NestedItem::int(1),
+            natsort::NestedItem::str_("b"),
+        ]),
+        natsort::NestedItem::branch(vec![
+            natsort::NestedItem::int(1),
+            natsort::NestedItem::str_("a"),
+        ]),
+        natsort::NestedItem::branch(vec![
+            natsort::NestedItem::int(2),
+            natsort::NestedItem::str_("a"),
+        ]),
+    ];
+    let rs_result = natsort::natsorted_recursive(&data);
+
+    // Verify order: [1,"a"] < [1,"b"] < [2,"a"]
+    let first = &rs_result[0];
+    if let natsort::NestedItem::Branch(children) = first {
+        assert_eq!(children.len(), 2);
+        if let natsort::NestedItem::Leaf(natsort::Item::Str(s)) = &children[1] {
+            assert_eq!(s, "a");
+        } else {
+            panic!("Expected second element of first branch to be 'a'");
+        }
+    } else {
+        panic!("Expected first element to be a Branch");
+    }
+}
+
+/// OS path sorting with extension handling.
+#[test]
+fn parity_os_sorted_extensions() {
+    let data = vec!["file(10).txt", "file(2).txt", "file(1).txt"];
+    let rs_result = natsort::os_sorted(&data);
+
+    // Should sort by number in parentheses: 1, 2, 10
+    assert_eq!(rs_result, vec![
+        "file(1).txt",
+        "file(2).txt",
+        "file(10).txt",
+    ]);
+}

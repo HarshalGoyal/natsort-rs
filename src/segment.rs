@@ -139,6 +139,29 @@ pub fn try_convert_to_number(s: &str) -> NatsortKeyPart {
     NatsortKeyPart::Str(s.to_string())
 }
 
+/// Convert a numeric value to its sort-key representation with NaN handling.
+///
+/// Python's `parse_number_or_none_factory` maps NaN/None to special tuples:
+/// - Default: `('', -inf, '1')` for NaN, `('', -inf, '2')` for None
+/// - NANLAST: `('', +inf, '3')` for NaN, `('', +inf, '1')` for NaN replacement
+pub fn convert_number_with_nan(val: f64, nanlast: bool) -> Vec<NatsortKeyPart> {
+    if val.is_nan() {
+        let nan_val = if nanlast { f64::INFINITY } else { f64::NEG_INFINITY };
+        vec![
+            NatsortKeyPart::Str("".into()),
+            NatsortKeyPart::Float(nan_val),
+            NatsortKeyPart::Str(if nanlast { "3" } else { "1" }.into()),
+        ]
+    } else {
+        vec![NatsortKeyPart::Str("".into()), NatsortKeyPart::Float(val)]
+    }
+}
+
+/// The null-string separator used for NUMAFTER mode.
+///
+/// Mirrors Python's `chr(sys.maxunicode) * 20`.
+pub const NUMAFTER_SEPARATOR: &str = "\u{10ffff}\u{10ffff}\u{10ffff}\u{10ffff}\u{10ffff}\u{10ffff}\u{10ffff}\u{10ffff}\u{10ffff}\u{10ffff}\u{10ffff}\u{10ffff}\u{10ffff}\u{10ffff}\u{10ffff}\u{10ffff}\u{10ffff}\u{10ffff}\u{10ffff}\u{10ffff}\u{10ffff}";
+
 #[cfg(test)]
 mod tests {
     use super::*;

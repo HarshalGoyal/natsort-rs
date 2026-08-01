@@ -6,6 +6,7 @@
 
 use regex::Regex;
 
+use crate::locale::locale_transform;
 use crate::ns::NsFlags;
 use crate::segment::{insert_sentinels, try_convert_to_number, NatsortKeyPart};
 
@@ -54,14 +55,39 @@ impl NatsortKey {
     /// );
     /// ```
     pub fn key(&self, input: &str) -> Vec<NatsortKeyPart> {
-        let transformed = if self.flags.contains(NsFlags::IGNORECASE) {
-            // Apply case-folding before splitting. For ASCII (Phase 1),
-            // to_lowercase() is equivalent to Python's str.casefold().
-            input.to_lowercase()
+        // Apply locale/groupletters/lowercasefirst transform if needed.
+        let transformed = if self.flags.contains(NsFlags::GROUPLETTERS)
+            || self.flags.contains(NsFlags::LOWERCASEFIRST)
+            || self.flags.contains(NsFlags::LOCALEALPHA)
+            || self.flags.contains(NsFlags::IGNORECASE)
+        {
+            locale_transform(input, self.flags)
         } else {
             input.to_string()
         };
+
         let parts = self.split_key(&transformed);
+
+        // Apply NUMAFTER separator if needed.
+        let parts = if self.flags.contains(NsFlags::NUMAFTER) && !parts.is_empty() {
+            // Wrap numbers in a high-value separator string so they sort after letters.
+            let mut wrapped = Vec::with_capacity(parts.len() + 1);
+            for part in parts {
+                match &part {
+                    NatsortKeyPart::Int(_) | NatsortKeyPart::Float(_) => {
+                        wrapped.push(NatsortKeyPart::Str(
+                            crate::segment::NUMAFTER_SEPARATOR.to_string(),
+                        ));
+                        wrapped.push(part);
+                    }
+                    _ => wrapped.push(part),
+                }
+            }
+            wrapped
+        } else {
+            parts
+        };
+
         insert_sentinels(parts)
     }
 
@@ -137,7 +163,7 @@ fn match_pattern(flags: NsFlags) -> &'static str {
     }
 }
 
-// ── Module-level convenience ─────────────────────────────────────────
+// ── Module-level convenience ───────────────────────────────────
 
 /// Default natsort key generator (uses [`NsFlags::DEFAULT`](NsFlags::DEFAULT)).
 pub fn default_key() -> NatsortKey {
@@ -151,6 +177,8 @@ pub fn default_sort_key(input: &str) -> Vec<NatsortKeyPart> {
 
 #[cfg(test)]
 mod tests {
+    use core::cmp::Ordering;
+
     use super::*;
 
     #[test]
@@ -348,5 +376,79 @@ mod tests {
 
         let sorted: Vec<&str> = sorted_indices.iter().map(|&i| items[i]).collect();
         assert_eq!(sorted, vec!["5", "a"]);
+    }
+
+    // ── Phase 2: Additional flags ────────────────────────────────
+
+    #[test]
+    fn groupletters_flag() {
+        // GROUPLETTERS groups uppercase and lowercase together: Apple, apple, Banana, banana
+        let key_gen = NatsortKey::new(NsFlags::GROUPLETTERS);
+        let items = vec!["Banana", "apple", "banana", "Apple"];
+        let keys: Vec<_> = items.iter().map(|s| key_gen.key(s)).collect();
+
+        let mut sorted_indices: Vec<usize> = (0..keys.len()).collect();
+        sorted_indices.sort_by(|&a, &b| keys[a].cmp(&keys[b]));
+
+        let sorted: Vec<&str> = sorted_indices.iter().map(|&i| items[i]).collect();
+        assert_eq!(sorted, vec!["Apple", "apple", "Banana", "banana"]);
+    }
+
+    #[test]
+    fn lowercasefirst_flag() {
+        // LOWERCASEFIRST puts lowercase first: apple, banana, Apple, Banana
+        let key_gen = NatsortKey::new(NsFlags::LOWERCASEFIRST);
+        let items = vec!["Banana", "apple", "banana", "Apple"];
+        let keys: Vec<_> = items.iter().map(|s| key_gen.key(s)).collect();
+
+        let mut sorted_indices: Vec<usize> = (0..keys.len()).collect();
+        sorted_indices.sort_by(|&a, &b| keys[a].cmp(&keys[b]));
+
+        let sorted: Vec<&str> = sorted_indices.iter().map(|&i| items[i]).collect();
+        assert_eq!(sorted, vec!["apple", "banana", "Apple", "Banana"]);
+    }
+
+    #[test]
+    fn numafter_flag() {
+        // NUMAFTER puts numbers after letters
+        let key_gen = NatsortKey::new(NsFlags::NUMAFTER);
+        let items = vec!["b", "2", "a", "1"];
+        let keys: Vec<_> = items.iter().map(|s| key_gen.key(s)).collect();
+
+        let mut sorted_indices: Vec<usize> = (0..keys.len()).collect();
+        sorted_indices.sort_by(|&a, &b| keys[a].cmp(&keys[b]));
+
+        let sorted: Vec<&str> = sorted_indices.iter().map(|&i| items[i]).collect();
+        assert_eq!(sorted, vec!["a", "b", "1", "2"]);
+    }
+
+    #[test]
+    fn presort_stability() {
+        // PRESORT breaks ties by string value: 'a01' < 'a1' < 'a2'
+        // First, presort by string value to establish tiebreaker order.
+        let mut indexed: Vec<(usize, &str)> = vec![
+            (0, "a1"),
+            (1, "a01"),
+            (2, "a2"),
+        ];
+        indexed.sort_by(|&(_, a), &(_, b)| a.cmp(b));
+        // Re-index based on presorted position.
+        indexed = indexed.into_iter().enumerate().map(|(i, (_, s))| (i, s)).collect();
+
+        let key_gen = NatsortKey::default();
+        let keys: Vec<_> = indexed.iter().map(|&(_, s)| key_gen.key(s)).collect();
+
+        let mut sorted_indices: Vec<usize> = (0..keys.len()).collect();
+        sorted_indices.sort_by(|&a, &b| {
+            match keys[a].cmp(&keys[b]) {
+                Ordering::Equal => a.cmp(&b),
+                ord => ord,
+            }
+        });
+
+        let sorted: Vec<&str> = sorted_indices.iter().map(|&i| indexed[i].1).collect();
+        // With PRESORT, 'a01' sorts before 'a1' because they have the same natural key
+        // but 'a01' < 'a1' lexicographically.
+        assert_eq!(sorted, vec!["a01", "a1", "a2"]);
     }
 }
