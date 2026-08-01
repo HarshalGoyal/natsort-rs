@@ -24,4 +24,9 @@ unicase = "2.7"
 
 [dev-dependencies]
 criterion = "0.5"
+fastrand = "2.3"
 pyo3 = { version = "0.22", features = ["auto-initialize"] }
+
+[[bench]]
+name = "natsort_bench"
+harness = false

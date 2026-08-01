@@ -8,7 +8,6 @@
 //! This module provides `natsorted_bytes()` for raw byte comparison and a
 //! decoder function that mirrors Python's `decoder("utf-8")`.
 
-use crate::ns::NsFlags;
 
 /// Sort a slice of byte slices using lexicographic ordering.
 ///
