@@ -9,6 +9,7 @@ use regex::Regex;
 use crate::locale::locale_transform;
 use crate::ns::NsFlags;
 use crate::segment::{insert_sentinels, try_convert_to_number, NatsortKeyPart};
+use crate::unicode_numbers;
 
 /// A compiled natsort key generator.
 ///
@@ -148,35 +149,55 @@ impl Default for NatsortKey {
 /// Compile the regex pattern appropriate for the given flags.
 fn compile_regex(flags: NsFlags) -> Regex {
     let pattern = match_pattern(flags);
-    Regex::new(pattern).expect("natsort regex pattern must be valid")
+    Regex::new(&pattern).expect("natsort regex pattern must be valid")
 }
 
 /// Select the regex pattern string based on algorithm flags.
 /// Mirrors Python's `regex_chooser` function.
-fn match_pattern(flags: NsFlags) -> &'static str {
+fn match_pattern(flags: NsFlags) -> String {
     let has_float = flags.contains(NsFlags::FLOAT);
-
+    
+    // Get Unicode character sets
+    let (decimals, digits, numeric, _digits_no_decimals, _numeric_no_decimals) = 
+        unicode_numbers::get_unicode_sets();
+    
+    // Escape characters for regex character class
+    let escape_for_regex = |s: &str| -> String {
+        s.chars().map(|c| {
+            if c == ']' || c == '\\' || c == '^' || c == '-' {
+                format!("\\{}", c)
+            } else {
+                c.to_string()
+            }
+        }).collect()
+    };
+    
+    let decimals_class = escape_for_regex(&decimals);
+    let _digits_class = escape_for_regex(&digits);
+    let _numeric_class = escape_for_regex(&numeric);
+    
     if has_float {
         let has_signed = flags.contains(NsFlags::SIGNED);
         let has_noexp = flags.contains(NsFlags::NOEXP);
 
         if has_signed && has_noexp {
-            r"([-+]?(?:\d+\.?\d*|\.\d+))"
+            format!(r"([-+]?(?:[{decimals_class}]+\.?[{decimals_class}]*|\.[{decimals_class}]+))")
         } else if has_noexp {
-            r"((?:\d+\.?\d*|\.\d+))"
+            format!(r"((?:[{decimals_class}]+\.?[{decimals_class}]*|\.[{decimals_class}]+))")
         } else if has_signed {
-            r"([-+]?(?:\d+\.?\d*(?:[eE][-+]?\d+)?|\.\d+(?:[eE][-+]?\d+)?))"
+            format!(r"([-+]?(?:[{decimals_class}]+\.?[{decimals_class}]*(?:[eE][-+]?[{decimals_class}]+)?|\.[{decimals_class}]+(?:[eE][-+]?[{decimals_class}]+)?))")
         } else {
-            r"((?:\d+\.?\d*(?:[eE][-+]?\d+)?|\.\d+(?:[eE][-+]?\d+)?))"
+            format!(r"((?:[{decimals_class}]+\.?[{decimals_class}]*(?:[eE][-+]?[{decimals_class}]+)?|\.[{decimals_class}]+(?:[eE][-+]?[{decimals_class}]+)?))")
         }
     } else if flags.contains(NsFlags::SIGNED) {
-        r"([-+]?\d+)"
+        format!(r"([-+]?[{decimals_class}]+)")
     } else {
-        r"(\d+)"
+        // Use Unicode-aware digits in the pattern
+        format!(r"([{decimals_class}]+)")
     }
 }
 
-// ── Module-level convenience ───────────────────────────────────
+// --- Module-level convenience ---------------------------------
 
 /// Default natsort key generator (uses [`NsFlags::DEFAULT`](NsFlags::DEFAULT)).
 pub fn default_key() -> NatsortKey {

@@ -160,7 +160,7 @@ fn value_cmp(a: &Item, b: &Item) -> Ordering {
     }
 }
 
-// ── Public API ─────────────────────────────────────────────────
+// ---- Public API ------------------------------------------------
 
 /// Sort a slice of [`Item`] values naturally.
 ///

@@ -32,6 +32,7 @@ pub mod ns;
 pub mod os_sort;
 pub mod recursive;
 pub mod segment;
+pub mod unicode_numbers;
 
 pub use bytes::{decode_bytes, decode_bytes_ascii, natsorted_bytes, natsorted_bytes_ignorecase};
 pub use error::{Error, Result};

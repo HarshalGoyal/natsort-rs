@@ -97,7 +97,7 @@ impl NestedItem {
     }
 }
 
-// ── Convenience constructors ───────────────────────────────────
+// -------- Convenience constructors ---------------------------------------------
 
 impl NestedItem {
     /// Create a leaf from a string.
@@ -126,7 +126,7 @@ impl NestedItem {
     }
 }
 
-// ── Public API ─────────────────────────────────────────────────
+// --- Public API ---------------------------------------------------------
 
 /// Sort a slice of [`NestedItem`] values with recursive descent.
 ///

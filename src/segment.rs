@@ -36,7 +36,7 @@ pub enum NatsortKeyPart {
     Float(f64),
 }
 
-// ── Ord implementation ───────────────────────────────────────────────
+// ----- Ord implementation -----------------------------------------
 
 impl PartialOrd for NatsortKeyPart {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
@@ -65,7 +65,7 @@ impl Ord for NatsortKeyPart {
     }
 }
 
-// ── Sentinel insertion ──────────────────────────────────────────────
+// ------------- Sentinel insertion ---------------------------------------
 
 /// Insert empty-string sentinels into a sequence of parts so that:
 ///
@@ -108,31 +108,109 @@ fn is_numeric(part: &NatsortKeyPart) -> bool {
     matches!(part, NatsortKeyPart::Int(_) | NatsortKeyPart::Float(_))
 }
 
-// ── Component transformation ─────────────────────────────────────────
+// ----- Component transformation -------------------------------------
 
 /// Attempt to convert a regex-captured string segment into a number.
 ///
 /// Tries `i64` first, then `f64`, then returns the original string.
 /// Empty strings are returned as-is (they should have been filtered out
 /// before calling this, but we handle it defensively).
+/// Convert Unicode digits to ASCII digits for parsing
+fn unicode_digit_to_ascii(c: char) -> Option<char> {
+    // Check if it's a Unicode decimal digit
+    if c.is_ascii_digit() {
+        Some(c)
+    } else {
+        // Map common Unicode digits to ASCII
+        match c {
+            '٠' => Some('0'), // Arabic-Indic digit zero
+            '١' => Some('1'),
+            '٢' => Some('2'),
+            '٣' => Some('3'),
+            '٤' => Some('4'),
+            '٥' => Some('5'),
+            '٦' => Some('6'),
+            '٧' => Some('7'),
+            '٨' => Some('8'),
+            '٩' => Some('9'),
+            '۰' => Some('0'), // Persian digit zero
+            '۱' => Some('1'),
+            '۲' => Some('2'),
+            '۳' => Some('3'),
+            '۴' => Some('4'),
+            '۵' => Some('5'),
+            '۶' => Some('6'),
+            '۷' => Some('7'),
+            '۸' => Some('8'),
+            '۹' => Some('9'),
+            '०' => Some('0'), // Devanagari digit zero
+            '१' => Some('1'),
+            '२' => Some('2'),
+            '३' => Some('3'),
+            '४' => Some('4'),
+            '५' => Some('5'),
+            '६' => Some('6'),
+            '७' => Some('7'),
+            '८' => Some('8'),
+            '९' => Some('9'),
+            '০' => Some('0'), // Bengali digit zero
+            '১' => Some('1'),
+            '২' => Some('2'),
+            '৩' => Some('3'),
+            '৪' => Some('4'),
+            '৫' => Some('5'),
+            '৬' => Some('6'),
+            '৭' => Some('7'),
+            '৮' => Some('8'),
+            '৯' => Some('9'),
+            '௦' => Some('0'), // Tamil digit zero
+            '௧' => Some('1'),
+            '௨' => Some('2'),
+            '௩' => Some('3'),
+            '௪' => Some('4'),
+            '௫' => Some('5'),
+            '௬' => Some('6'),
+            '௭' => Some('7'),
+            '௮' => Some('8'),
+            '௯' => Some('9'),
+            _ => None,
+        }
+    }
+}
+
+/// Convert a string with Unicode digits to ASCII for parsing
+fn convert_unicode_to_ascii(s: &str) -> String {
+    s.chars()
+        .map(|c| unicode_digit_to_ascii(c).unwrap_or(c))
+        .collect()
+}
+
+/// Convert a parsed string segment into a number when possible, else keep it as a [`NatsortKeyPart::Str`].
+///
+/// Non-ASCII digits are first normalized to ASCII, then the string is tried as
+/// an `i64` and then an `f64`. If neither parses it is returned unchanged as a
+/// string segment.
 pub fn try_convert_to_number(s: &str) -> NatsortKeyPart {
     if s.is_empty() {
         return NatsortKeyPart::Str(s.to_string());
     }
 
+    // Convert Unicode digits to ASCII for parsing
+    let ascii_s = convert_unicode_to_ascii(s);
+    
     // Fast path: check if it looks like a number.
-    let first_char = s.chars().next().unwrap();
+    let first_char = ascii_s.chars().next().unwrap();
     if !first_char.is_ascii_digit() && first_char != '+' && first_char != '-' && first_char != '.' {
         return NatsortKeyPart::Str(s.to_string());
     }
 
     // Try int first (covers cases like "10", "+5", "-3").
-    if let Ok(n) = s.parse::<i64>() {
+    if let Ok(n) = ascii_s.parse::<i64>() {
         return NatsortKeyPart::Int(n);
     }
 
     // Try float (covers cases like "1.5", "1e10", ".5", "+2.3E-4").
-    if let Ok(f) = s.parse::<f64>() {
+    if let Ok(f) = ascii_s.parse::<f64>() {
         return NatsortKeyPart::Float(f);
     }
 

@@ -105,7 +105,7 @@ fn split_extension(filename: &str) -> (&str, Vec<&str>) {
     (remaining, exts)
 }
 
-// ── Public API ─────────────────────────────────────────────────
+// ---- Public API ------------------------------------------------
 
 /// Sort paths in the same order as a file explorer.
 ///

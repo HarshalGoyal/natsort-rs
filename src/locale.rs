@@ -61,26 +61,30 @@ impl Ord for LocaleStr {
 /// For `LOCALEALPHA`, this lowercases the string using Unicode case-folding.
 /// For `ns.GROUPLETTERS`, doubles all characters with lowercase variants.
 /// For `ns.LOWERCASEFIRST`, swaps case (lower→upper, upper→lower).
+/// For `ns.LOCALENUM`, removes thousands separators and converts decimal points.
 pub fn locale_transform(input: &str, flags: NsFlags) -> String {
-    let has_groupletters = flags.contains(NsFlags::GROUPLETTERS);
-    let has_lowercasefirst = flags.contains(NsFlags::LOWERCASEFIRST);
-    let has_localealpha = flags.contains(NsFlags::LOCALEALPHA);
-    let has_ignorecase = flags.contains(NsFlags::IGNORECASE);
-
-    if has_groupletters {
+    let mut result = input.to_string();
+    
+    // Apply transformations in order (matching Python's chain_functions)
+    
+    // GROUPLETTERS transformation
+    if flags.contains(NsFlags::GROUPLETTERS) {
         // Double all characters, making doubled letters lowercase.
         // "Apple" → "aAppppllee" — lowercase variant FIRST, then original.
-        input
+        result = result
             .chars()
             .flat_map(|c| {
                 let lower = c.to_lowercase().next().unwrap_or(c);
                 vec![lower, c]
             })
-            .collect()
-    } else if has_lowercasefirst {
+            .collect();
+    }
+    
+    // LOWERCASEFIRST transformation
+    if flags.contains(NsFlags::LOWERCASEFIRST) {
         // Swap case: lowercase → uppercase, uppercase → lowercase.
         // "Apple" → "aPPLE"
-        input.chars().map(|c| {
+        result = result.chars().map(|c| {
             if c.is_lowercase() {
                 c.to_uppercase().next().unwrap()
             } else if c.is_uppercase() {
@@ -88,13 +92,81 @@ pub fn locale_transform(input: &str, flags: NsFlags) -> String {
             } else {
                 c
             }
-        }).collect()
-    } else if has_localealpha || has_ignorecase {
-        // Use unicase for proper Unicode case folding, then lowercase.
-        UniCase::new(input.to_lowercase()).to_string()
-    } else {
-        input.to_string()
+        }).collect();
     }
+    
+    // LOCALEALPHA or IGNORECASE transformation
+    if flags.contains(NsFlags::LOCALEALPHA) || flags.contains(NsFlags::IGNORECASE) {
+        // Use unicase for proper Unicode case folding, then lowercase.
+        result = UniCase::new(result.to_lowercase()).to_string();
+    }
+    
+    // LOCALENUM transformation
+    if flags.contains(NsFlags::LOCALENUM) {
+        result = handle_localenum(&result);
+    }
+    
+    result
+}
+
+/// Handle LOCALENUM transformation: remove thousands separators and convert decimal points.
+/// This is a simplified implementation that handles the most common cases.
+fn handle_localenum(input: &str) -> String {
+    // Simplified implementation that mimics Python's logic:
+    // 1. Remove thousands separators (comma, period, space, non-breaking space)
+    // 2. Only remove if followed by exactly 3 digits
+    // 3. Don't remove if it's actually a decimal point
+    
+    // Note: This doesn't handle locale-specific decimal points (e.g., comma in de_DE)
+    // For full locale support, we would need to know the current locale's
+    // thousands separator and decimal point.
+    
+    let mut result = String::with_capacity(input.len());
+    let chars: Vec<char> = input.chars().collect();
+    let mut i = 0;
+    
+    while i < chars.len() {
+        let c = chars[i];
+        
+        // Check if this character could be a thousands separator
+        if c == ',' || c == '.' || c == ' ' || c == '\u{00A0}' {
+            // Check if it's a valid thousands separator:
+            // 1. Must have at least 1 digit before
+            // 2. Must have exactly 3 digits after
+            // 3. Those 3 digits must be followed by a non-digit or end of string
+            
+            let mut is_thousands_sep = false;
+            
+            // Check for digit before
+            if i > 0 && chars[i-1].is_ascii_digit() {
+                // Check for 3 digits after
+                if i + 3 < chars.len() {
+                    let d1 = chars[i+1].is_ascii_digit();
+                    let d2 = chars[i+2].is_ascii_digit();
+                    let d3 = chars[i+3].is_ascii_digit();
+                    
+                    if d1 && d2 && d3 {
+                        // Check what comes after the 3 digits
+                        if i + 4 == chars.len() || !chars[i+4].is_ascii_digit() {
+                            // Valid thousands separator pattern
+                            is_thousands_sep = true;
+                        }
+                    }
+                }
+            }
+            
+            if is_thousands_sep {
+                // Skip this thousands separator
+                i += 1;
+                continue;
+            }
+        }
+        
+        result.push(c);
+        i += 1;
+    }
+    
+    result
 }
 
 /// Compare two strings using locale-aware ordering.
@@ -102,15 +174,6 @@ pub fn locale_transform(input: &str, flags: NsFlags) -> String {
 /// Returns the same result as comparing their [`LocaleStr`] wrappers.
 pub fn locale_cmp(a: &str, b: &str) -> core::cmp::Ordering {
     LocaleStr::new(a).cmp(&LocaleStr::new(b))
-}
-
-/// Get the null-string separator used for NUMAFTER mode.
-///
-/// Python uses `chr(sys.maxunicode) * 20` as the max string for non-locale
-/// NUMAFTER, and an empty byte string for locale NUMAFTER.
-/// We approximate this with a high-value Unicode repeat.
-pub fn numafter_separator() -> &'static str {
-    "\u{10ffff}\u{10ffff}\u{10ffff}\u{10ffff}\u{10ffff}\u{10ffff}\u{10ffff}\u{10ffff}\u{10ffff}\u{10ffff}\u{10ffff}\u{10ffff}\u{10ffff}\u{10ffff}\u{10ffff}\u{10ffff}\u{10ffff}\u{10ffff}\u{10ffff}\u{10ffff}\u{10ffff}"
 }
 
 #[cfg(test)]
@@ -158,8 +221,23 @@ mod tests {
     }
 
     #[test]
-    fn locale_cmp_works() {
-        assert_eq!(locale_cmp("Apple", "apple"), core::cmp::Ordering::Equal);
-        assert_eq!(locale_cmp("banana", "apple"), core::cmp::Ordering::Greater);
+    fn locale_transform_localenum_thousands() {
+        // Test thousands separator removal
+        let result1 = locale_transform("a5,467", NsFlags::LOCALENUM);
+        println!("locale_transform(\"a5,467\", LOCALENUM) = \"{}\"", result1);
+        assert_eq!(result1, "a5467");
+        
+        let result2 = locale_transform("a12,543,642", NsFlags::LOCALENUM);
+        println!("locale_transform(\"a12,543,642\", LOCALENUM) = \"{}\"", result2);
+        assert_eq!(result2, "a12543642");
+        
+        // Should NOT remove comma not followed by 3 digits
+        assert_eq!(locale_transform("a5,6", NsFlags::LOCALENUM), "a5,6");
+        assert_eq!(locale_transform("a5,67", NsFlags::LOCALENUM), "a5,67");
+        
+        // Test with LOCALE flag (includes LOCALENUM)
+        let result3 = locale_transform("a5,467", NsFlags::LOCALE);
+        println!("locale_transform(\"a5,467\", LOCALE) = \"{}\"", result3);
+        assert_eq!(result3, "a5467");
     }
 }

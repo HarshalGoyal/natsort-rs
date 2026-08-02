@@ -47,7 +47,7 @@ bitflags! {
         /// Presort input as strings to eliminate inconsistent ordering (`PRESORT = 0x2000`).
         const PRESORT     = 0x2000;
 
-        // ── Aliases ──────────────────────────────────────────────
+        // ------ Aliases --------------------------------------------
 
         /// Shortcut: `FLOAT | SIGNED` — useful for sorting real numbers.
         const REAL = Self::FLOAT.bits() | Self::SIGNED.bits();
@@ -55,7 +55,7 @@ bitflags! {
         /// Shortcut: `LOCALEALPHA | LOCALENUM`.
         const LOCALE = Self::LOCALEALPHA.bits() | Self::LOCALENUM.bits();
 
-        // ── Default / no-op flags ────────────────────────────────
+        // ------ Default / no-op flags --------------------------------------------
 
         /// Default algorithm (equivalent to `INT`). Value is `0`.
         const DEFAULT = 0;
@@ -64,7 +64,7 @@ bitflags! {
         /// Unsigned number parsing (default). Value is `0`.
         const UNSIGNED = 0;
 
-        // ── Short aliases ────────────────────────────────────────
+        // ------ Short aliases -------------------------------------------------
 
         /// Short alias for [`FLOAT`](NsFlags::FLOAT).
         const F = Self::FLOAT.bits();
