@@ -5,15 +5,17 @@
 Criterion.rs 0.5.1 (Rust) via `cargo bench --bench natsort_bench`.
 
 Python reference benchmarks run through the same Criterion harness via PyO3,
-ensuring identical hardware/thermal conditions.
+ensuring identical hardware/thermal conditions. The Python group uses a
+60s measurement window (vs 10s for Rust) so the slower reference benches
+(e.g. `os_sorted` ~540 ms/iter) can still collect the full 100 samples.
 
 ## Parameters
 
 | Parameter | Value |
 |-----------|-------|
 | Warm-up time | 0.4 s |
-| Measurement time | 10 s |
-| Sample size | 10 |
+| Measurement time | 10 s (rust) / 60 s (python) |
+| Sample size | 100 |
 | Confidence level | 95% (default) |
 
 ## Metrics
@@ -29,8 +31,9 @@ Extracted from Criterion's raw sample files (`target/criterion/*/new/sample.json
 computed per-iteration from cumulative `times`/`iters`, then linearly
 interpolated at the 99th percentile. Reported per benchmark as
 `rust_p99_ms` / `python_p99_ms`, and top-level as `startup_p99_ms`.
-With n=10 samples, p99 approximates the worst-case measurement. Useful for
-understanding tail latency characteristics.
+With n=100 samples (Criterion default), p99 is a statistically meaningful
+tail-latency estimate; lower sample counts (e.g. 10) would collapse p99
+onto the observed max.
 
 ### RSS (resident set size)
 

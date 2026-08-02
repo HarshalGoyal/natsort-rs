@@ -8,7 +8,6 @@
 //! This module provides `natsorted_bytes()` for raw byte comparison and a
 //! decoder function that mirrors Python's `decoder("utf-8")`.
 
-
 /// Sort a slice of byte slices using lexicographic ordering.
 ///
 /// Bytes are compared directly without number splitting — this mirrors
@@ -26,7 +25,7 @@
 /// ```
 pub fn natsorted_bytes(items: &[&[u8]]) -> Vec<Vec<u8>> {
     let mut indexed: Vec<_> = items.iter().enumerate().collect();
-    indexed.sort_by(|&(_, &a), &(_, &b)| a.cmp(b));
+    indexed.sort_by_key(|&(_, &a)| a);
     indexed.into_iter().map(|(_, item)| item.to_vec()).collect()
 }
 
@@ -104,7 +103,10 @@ mod tests {
     fn bytes_basic() {
         let data = vec![b"z".as_slice(), b"a".as_slice(), b"m".as_slice()];
         let result = natsorted_bytes(&data);
-        assert_eq!(result, vec![b"a".as_slice(), b"m".as_slice(), b"z".as_slice()]);
+        assert_eq!(
+            result,
+            vec![b"a".as_slice(), b"m".as_slice(), b"z".as_slice()]
+        );
     }
 
     #[test]
@@ -118,7 +120,10 @@ mod tests {
     fn bytes_ignorecase() {
         let data = vec![b"B".as_slice(), b"a".as_slice(), b"A".as_slice()];
         let result = natsorted_bytes_ignorecase(&data);
-        assert_eq!(result, vec![b"a".as_slice(), b"A".as_slice(), b"B".as_slice()]);
+        assert_eq!(
+            result,
+            vec![b"a".as_slice(), b"A".as_slice(), b"B".as_slice()]
+        );
     }
 
     #[test]

@@ -28,6 +28,27 @@ fn diff_flags() -> Vec<(NsFlags, &'static str)> {
     ]
 }
 
+/// Returns `true` if any item contains a codepoint in Python's non-decimal
+/// `digit` / `numeric` sets, which Rust deliberately treats as text.
+///
+/// Queries `natsort.unicode_numbers` so the skip list stays in sync with the
+/// Python version being compared against.
+fn has_divergent_unicode(py: Python<'_>, items: &[String]) -> bool {
+    use std::collections::HashSet;
+
+    let Ok(module) = py.import_bound("natsort.unicode_numbers") else {
+        return false;
+    };
+    let mut divergent: HashSet<char> = HashSet::new();
+    for name in ["digits_no_decimals", "numeric_no_decimals"] {
+        let Ok(chars) = module.getattr(name).and_then(|c| c.extract::<String>()) else {
+            continue;
+        };
+        divergent.extend(chars.chars());
+    }
+    items.iter().any(|s| s.chars().any(|ch| divergent.contains(&ch)))
+}
+
 fn rust_order(items: &[String], flags: NsFlags) -> Vec<String> {
     let refs: Vec<&str> = items.iter().map(|s| s.as_str()).collect();
     natsorted_with(&refs, flags)
@@ -51,6 +72,16 @@ fuzz_target!(|data: &[u8]| {
         .collect();
 
     Python::with_gil(|py| {
+        // Known, deliberate parity divergence (see DECISIONS.md §1): Rust
+        // treats non-decimal `digit`/`numeric` codepoints (superscripts,
+        // circled digits, `½`, …) as text, but Python classifies them as
+        // numbers. Skip any input containing such a character so the target
+        // hunts for genuine regressions instead of aborting on the documented
+        // gap.
+        if has_divergent_unicode(py, &items) {
+            return;
+        }
+
         for &(flags, alg) in &diff_flags() {
             let rust = rust_order(&items, flags);
             let python = python_order(py, &items, alg)

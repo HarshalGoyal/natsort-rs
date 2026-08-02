@@ -1,6 +1,6 @@
 //! Unicode support module for natsort-rs
 //!
-//! Provides Unicode character sets for numeric parsing, matching Python's 
+//! Provides Unicode character sets for numeric parsing, matching Python's
 //! unicode_numbers.py and unicode_numeric_hex.py functionality.
 
 /// Unicode decimal characters (0-9 in various scripts)
@@ -25,6 +25,6 @@ pub fn get_unicode_sets() -> (String, String, String, String, String) {
         DIGITS.to_string(),
         NUMERIC.to_string(),
         DIGITS_NO_DECIMALS.to_string(),
-        NUMERIC_NO_DECIMALS.to_string()
+        NUMERIC_NO_DECIMALS.to_string(),
     )
 }

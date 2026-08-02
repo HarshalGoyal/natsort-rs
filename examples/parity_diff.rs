@@ -15,7 +15,7 @@
 //! NOEXP, REAL, PATH, IGNORECASE, LOCALE, ...). With no positional items,
 //! input is read from stdin (one item per line).
 
-use natsort::{natsorted_with, NsFlags};
+use natsort::{NsFlags, natsorted_with};
 use pyo3::prelude::*;
 use pyo3::types::PyList;
 use std::io::{self, BufRead};
@@ -85,7 +85,10 @@ fn main() {
         (flag_val, python_result, rust_result)
     });
 
-    println!("algorithm: natsorted(alg=ns.{})  (0x{flag_val:x})", args.alg);
+    println!(
+        "algorithm: natsorted(alg=ns.{})  (0x{flag_val:x})",
+        args.alg
+    );
     println!("input :");
     for s in &args.items {
         println!("   {s:?}");
@@ -100,10 +103,16 @@ fn main() {
     }
 
     if python_result == rust_result {
-        println!("\nMATCH — Python and Rust agree on all {} items.\n", args.items.len());
+        println!(
+            "\nMATCH — Python and Rust agree on all {} items.\n",
+            args.items.len()
+        );
         std::process::exit(0);
     } else {
-        println!("\nDIFF — {n} orderings diverge (see above).", n = args.items.len());
+        println!(
+            "\nDIFF — {n} orderings diverge (see above).",
+            n = args.items.len()
+        );
         std::process::exit(1);
     }
 }

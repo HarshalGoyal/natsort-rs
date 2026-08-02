@@ -27,7 +27,7 @@
 //! cargo test --test parity_suite
 //! ```
 
-use natsort::{natsorted_with, os_sorted, realsorted, NsFlags};
+use natsort::{NsFlags, natsorted_with, os_sorted, realsorted};
 use pyo3::prelude::*;
 use pyo3::types::PyModule;
 
@@ -121,11 +121,17 @@ result = (behaviorals, total, breakdown, cases)
 
 #[test]
 fn parity_full_suite_runs_all_344() {
-    type Pinned = (i64, i64, Vec<(String, i64)>, Vec<(String, i64, Vec<String>, Vec<String>)>);
+    type Pinned = (
+        i64,
+        i64,
+        Vec<(String, i64)>,
+        Vec<(String, i64, Vec<String>, Vec<String>)>,
+    );
 
     let (behaviorals, total, breakdown, cases) = Python::with_gil(|py| -> Pinned {
-        let module = PyModule::from_code_bound(py, COLLECT_CODE, "parity_collector.py", "parity_collector")
-            .expect("the Python collector compiled");
+        let module =
+            PyModule::from_code_bound(py, COLLECT_CODE, "parity_collector.py", "parity_collector")
+                .expect("the Python collector compiled");
         module
             .getattr("result")
             .expect("the collector defined `result`")
@@ -196,7 +202,11 @@ fn parity_full_suite_runs_all_344() {
         let mark = if file == "test_natsorted.py"
             || file == "test_natsorted_convenience.py"
             || file == "test_os_sorted.py"
-        { "  ⟶ behavioural" } else { "" };
+        {
+            "  ⟶ behavioural"
+        } else {
+            ""
+        };
         println!("    {file:<42} {count:>4}{mark}");
     }
     println!(
@@ -205,9 +215,7 @@ fn parity_full_suite_runs_all_344() {
     println!("  Python-internal-only (no Rust mirror)  : {internal}");
     println!("  ── differential comparison ──");
     println!("  cases compared                         : {}", cases.len());
-    println!(
-        "  core (non-locale)  {core}  → matched {core_matched}  divergent {core_divergent}"
-    );
+    println!("  core (non-locale)  {core}  → matched {core_matched}  divergent {core_divergent}");
     println!(
         "  locale (known partial §D-05) {locale}  → matched {locale_matched}  divergent {locale_divergent}"
     );

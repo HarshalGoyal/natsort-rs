@@ -1,220 +1,262 @@
-   Compiling serde_core v1.0.229
    Compiling pyo3-build-config v0.22.6
    Compiling pyo3-ffi v0.22.6
    Compiling pyo3-macros-backend v0.22.6
    Compiling pyo3 v0.22.6
-   Compiling serde v1.0.229
-   Compiling serde_json v1.0.151
-   Compiling ciborium v0.2.2
-   Compiling tinytemplate v1.2.1
-   Compiling criterion v0.5.1
    Compiling pyo3-macros v0.22.6
    Compiling natsort-rs v0.1.0 (/mnt/d/workspace/port_mortem/natsort-rs)
-    Finished `bench` profile [optimized] target(s) in 25.79s
+    Finished `bench` profile [optimized] target(s) in 17.06s
      Running benches/natsort_bench.rs (target/release/build/natsort-rs/8b4bf40bf1b8a535/out/natsort_bench-8b4bf40bf1b8a535)
 Gnuplot not found, using plotters backend
 Benchmarking rust/files/natsorted_default
 Benchmarking rust/files/natsorted_default: Warming up for 400.00 ms
-Benchmarking rust/files/natsorted_default: Collecting 10 samples in estimated 10.048 s (605 iterations)
+Benchmarking rust/files/natsorted_default: Collecting 100 samples in estimated 11.047 s (700 iterations)
 Benchmarking rust/files/natsorted_default: Analyzing
 rust/files/natsorted_default
-                        time:   [16.651 ms 17.182 ms 17.603 ms]
+                        time:   [14.550 ms 14.766 ms 14.980 ms]
+Found 1 outliers among 100 measurements (1.00%)
+  1 (1.00%) high mild
 
 Benchmarking rust/files/natsorted_real
 Benchmarking rust/files/natsorted_real: Warming up for 400.00 ms
-Benchmarking rust/files/natsorted_real: Collecting 10 samples in estimated 10.310 s (605 iterations)
+Benchmarking rust/files/natsorted_real: Collecting 100 samples in estimated 11.223 s (700 iterations)
 Benchmarking rust/files/natsorted_real: Analyzing
 rust/files/natsorted_real
-                        time:   [17.229 ms 17.877 ms 18.361 ms]
-Found 1 outliers among 10 measurements (10.00%)
-  1 (10.00%) high mild
+                        time:   [14.374 ms 14.616 ms 14.860 ms]
 
 Benchmarking rust/files/natsorted_ignorecase
 Benchmarking rust/files/natsorted_ignorecase: Warming up for 400.00 ms
-Benchmarking rust/files/natsorted_ignorecase: Collecting 10 samples in estimated 10.417 s (605 iterations)
+Benchmarking rust/files/natsorted_ignorecase: Collecting 100 samples in estimated 11.412 s (700 iterations)
 Benchmarking rust/files/natsorted_ignorecase: Analyzing
 rust/files/natsorted_ignorecase
-                        time:   [17.108 ms 17.983 ms 18.599 ms]
+                        time:   [14.097 ms 14.467 ms 14.820 ms]
+Found 13 outliers among 100 measurements (13.00%)
+  7 (7.00%) low severe
+  4 (4.00%) low mild
+  2 (2.00%) high mild
 
 Benchmarking rust/files/natsorted_path
 Benchmarking rust/files/natsorted_path: Warming up for 400.00 ms
-Benchmarking rust/files/natsorted_path: Collecting 10 samples in estimated 10.801 s (550 iterations)
+Benchmarking rust/files/natsorted_path: Collecting 100 samples in estimated 11.588 s (600 iterations)
 Benchmarking rust/files/natsorted_path: Analyzing
 rust/files/natsorted_path
-                        time:   [19.519 ms 19.714 ms 20.028 ms]
+                        time:   [16.734 ms 17.322 ms 17.920 ms]
+Found 25 outliers among 100 measurements (25.00%)
+  2 (2.00%) low severe
+  16 (16.00%) low mild
+  2 (2.00%) high mild
+  5 (5.00%) high severe
 
 Benchmarking rust/floats/natsorted_default
 Benchmarking rust/floats/natsorted_default: Warming up for 400.00 ms
-Benchmarking rust/floats/natsorted_default: Collecting 10 samples in estimated 10.382 s (1155 iterations)
+Benchmarking rust/floats/natsorted_default: Collecting 100 samples in estimated 10.297 s (1300 iterations)
 Benchmarking rust/floats/natsorted_default: Analyzing
 rust/floats/natsorted_default
-                        time:   [8.5822 ms 8.7441 ms 8.8967 ms]
+                        time:   [7.6089 ms 7.7141 ms 7.8243 ms]
+Found 2 outliers among 100 measurements (2.00%)
+  2 (2.00%) high mild
 
 Benchmarking rust/floats/natsorted_real
 Benchmarking rust/floats/natsorted_real: Warming up for 400.00 ms
-Benchmarking rust/floats/natsorted_real: Collecting 10 samples in estimated 10.376 s (1320 iterations)
+Benchmarking rust/floats/natsorted_real: Collecting 100 samples in estimated 10.352 s (1400 iterations)
 Benchmarking rust/floats/natsorted_real: Analyzing
 rust/floats/natsorted_real
-                        time:   [7.0230 ms 7.1760 ms 7.2847 ms]
-Found 1 outliers among 10 measurements (10.00%)
-  1 (10.00%) high mild
+                        time:   [7.1611 ms 7.3109 ms 7.4641 ms]
+Found 1 outliers among 100 measurements (1.00%)
+  1 (1.00%) high mild
 
 Benchmarking rust/floats/natsorted_ignorecase
 Benchmarking rust/floats/natsorted_ignorecase: Warming up for 400.00 ms
-Benchmarking rust/floats/natsorted_ignorecase: Collecting 10 samples in estimated 10.095 s (1100 iterations)
+Benchmarking rust/floats/natsorted_ignorecase: Collecting 100 samples in estimated 10.218 s (1200 iterations)
 Benchmarking rust/floats/natsorted_ignorecase: Analyzing
 rust/floats/natsorted_ignorecase
-                        time:   [8.2490 ms 8.3528 ms 8.4444 ms]
+                        time:   [7.2768 ms 7.4034 ms 7.5350 ms]
+Found 3 outliers among 100 measurements (3.00%)
+  3 (3.00%) high mild
 
 Benchmarking rust/floats/natsorted_path
 Benchmarking rust/floats/natsorted_path: Warming up for 400.00 ms
-Benchmarking rust/floats/natsorted_path: Collecting 10 samples in estimated 10.389 s (1210 iterations)
+Benchmarking rust/floats/natsorted_path: Collecting 100 samples in estimated 10.227 s (1200 iterations)
 Benchmarking rust/floats/natsorted_path: Analyzing
 rust/floats/natsorted_path
-                        time:   [8.6996 ms 8.9397 ms 9.0886 ms]
+                        time:   [7.3460 ms 7.5081 ms 7.6583 ms]
+Found 8 outliers among 100 measurements (8.00%)
+  3 (3.00%) low severe
+  3 (3.00%) low mild
+  2 (2.00%) high mild
 
 Benchmarking rust/paths/natsorted_default
 Benchmarking rust/paths/natsorted_default: Warming up for 400.00 ms
-Benchmarking rust/paths/natsorted_default: Collecting 10 samples in estimated 10.668 s (825 iterations)
+Benchmarking rust/paths/natsorted_default: Collecting 100 samples in estimated 10.282 s (1600 iterations)
 Benchmarking rust/paths/natsorted_default: Analyzing
 rust/paths/natsorted_default
-                        time:   [10.391 ms 10.609 ms 10.913 ms]
+                        time:   [9.1890 ms 9.3780 ms 9.5470 ms]
+Found 7 outliers among 100 measurements (7.00%)
+  5 (5.00%) low severe
+  2 (2.00%) high mild
 
 Benchmarking rust/paths/natsorted_real
 Benchmarking rust/paths/natsorted_real: Warming up for 400.00 ms
-Benchmarking rust/paths/natsorted_real: Collecting 10 samples in estimated 10.073 s (880 iterations)
+Benchmarking rust/paths/natsorted_real: Collecting 100 samples in estimated 10.894 s (1100 iterations)
 Benchmarking rust/paths/natsorted_real: Analyzing
 rust/paths/natsorted_real
-                        time:   [10.509 ms 10.927 ms 11.259 ms]
+                        time:   [9.3189 ms 9.4336 ms 9.5501 ms]
+Found 2 outliers among 100 measurements (2.00%)
+  2 (2.00%) high mild
 
 Benchmarking rust/paths/natsorted_ignorecase
 Benchmarking rust/paths/natsorted_ignorecase: Warming up for 400.00 ms
-Benchmarking rust/paths/natsorted_ignorecase: Collecting 10 samples in estimated 10.444 s (880 iterations)
+Benchmarking rust/paths/natsorted_ignorecase: Collecting 100 samples in estimated 10.869 s (1100 iterations)
 Benchmarking rust/paths/natsorted_ignorecase: Analyzing
 rust/paths/natsorted_ignorecase
-                        time:   [10.074 ms 10.275 ms 10.660 ms]
+                        time:   [9.2070 ms 9.3138 ms 9.4250 ms]
+Found 1 outliers among 100 measurements (1.00%)
+  1 (1.00%) high mild
 
 Benchmarking rust/paths/natsorted_path
 Benchmarking rust/paths/natsorted_path: Warming up for 400.00 ms
-Benchmarking rust/paths/natsorted_path: Collecting 10 samples in estimated 10.611 s (495 iterations)
+Benchmarking rust/paths/natsorted_path: Collecting 100 samples in estimated 10.076 s (500 iterations)
 Benchmarking rust/paths/natsorted_path: Analyzing
 rust/paths/natsorted_path
-                        time:   [19.954 ms 20.140 ms 20.305 ms]
-Found 1 outliers among 10 measurements (10.00%)
-  1 (10.00%) high severe
+                        time:   [19.038 ms 19.192 ms 19.345 ms]
+Found 1 outliers among 100 measurements (1.00%)
+  1 (1.00%) low mild
 
 Benchmarking rust/files/realsorted
 Benchmarking rust/files/realsorted: Warming up for 400.00 ms
-Benchmarking rust/files/realsorted: Collecting 10 samples in estimated 10.315 s (605 iterations)
+Benchmarking rust/files/realsorted: Collecting 100 samples in estimated 10.497 s (700 iterations)
 Benchmarking rust/files/realsorted: Analyzing
-rust/files/realsorted   time:   [16.708 ms 17.463 ms 18.128 ms]
-Found 1 outliers among 10 measurements (10.00%)
-  1 (10.00%) high mild
+rust/files/realsorted   time:   [14.480 ms 14.616 ms 14.759 ms]
+Found 2 outliers among 100 measurements (2.00%)
+  2 (2.00%) high mild
 
 Benchmarking rust/floats/realsorted
 Benchmarking rust/floats/realsorted: Warming up for 400.00 ms
-Benchmarking rust/floats/realsorted: Collecting 10 samples in estimated 10.317 s (1320 iterations)
+Benchmarking rust/floats/realsorted: Collecting 100 samples in estimated 10.073 s (1300 iterations)
 Benchmarking rust/floats/realsorted: Analyzing
-rust/floats/realsorted  time:   [7.3118 ms 7.5369 ms 7.6611 ms]
+rust/floats/realsorted  time:   [6.8259 ms 6.9530 ms 7.0859 ms]
+Found 3 outliers among 100 measurements (3.00%)
+  3 (3.00%) high mild
 
 Benchmarking rust/paths/realsorted
 Benchmarking rust/paths/realsorted: Warming up for 400.00 ms
-Benchmarking rust/paths/realsorted: Collecting 10 samples in estimated 10.521 s (935 iterations)
+Benchmarking rust/paths/realsorted: Collecting 100 samples in estimated 10.703 s (1100 iterations)
 Benchmarking rust/paths/realsorted: Analyzing
-rust/paths/realsorted   time:   [10.077 ms 10.268 ms 10.403 ms]
+rust/paths/realsorted   time:   [9.5531 ms 9.6514 ms 9.7500 ms]
 
 Benchmarking rust/paths/os_sorted
 Benchmarking rust/paths/os_sorted: Warming up for 400.00 ms
-Benchmarking rust/paths/os_sorted: Collecting 10 samples in estimated 11.431 s (110 iterations)
+Benchmarking rust/paths/os_sorted: Collecting 100 samples in estimated 18.580 s (200 iterations)
 Benchmarking rust/paths/os_sorted: Analyzing
-rust/paths/os_sorted    time:   [90.162 ms 91.075 ms 92.010 ms]
+rust/paths/os_sorted    time:   [88.482 ms 88.775 ms 89.071 ms]
+Found 1 outliers among 100 measurements (1.00%)
+  1 (1.00%) high mild
 
 Benchmarking rust/startup
 Benchmarking rust/startup: Warming up for 400.00 ms
-Benchmarking rust/startup: Collecting 10 samples in estimated 10.005 s (99k iterations)
+Benchmarking rust/startup: Collecting 100 samples in estimated 10.237 s (106k iterations)
 Benchmarking rust/startup: Analyzing
-rust/startup            time:   [94.969 µs 97.868 µs 99.886 µs]
-Found 1 outliers among 10 measurements (10.00%)
-  1 (10.00%) low severe
+rust/startup            time:   [96.080 µs 97.124 µs 98.339 µs]
+Found 4 outliers among 100 measurements (4.00%)
+  3 (3.00%) high mild
+  1 (1.00%) high severe
 
 Benchmarking python/files/natsorted_default
 Benchmarking python/files/natsorted_default: Warming up for 400.00 ms
-Benchmarking python/files/natsorted_default: Collecting 10 samples in estimated 13.108 s (30 iterations)
+
+Warning: Unable to complete 100 samples in 60.0s. You may wish to increase target time to 65.6s, or reduce sample count to 90.
+Benchmarking python/files/natsorted_default: Collecting 100 samples in estimated 65.593 s (100 iterations)
 Benchmarking python/files/natsorted_default: Analyzing
 python/files/natsorted_default
-                        time:   [109.33 ms 110.56 ms 111.86 ms]
+                        time:   [116.37 ms 116.74 ms 117.12 ms]
+Found 2 outliers among 100 measurements (2.00%)
+  2 (2.00%) high mild
 
 Benchmarking python/floats/natsorted_default
 Benchmarking python/floats/natsorted_default: Warming up for 400.00 ms
-Benchmarking python/floats/natsorted_default: Collecting 10 samples in estimated 11.528 s (220 iterations)
+Benchmarking python/floats/natsorted_default: Collecting 100 samples in estimated 60.934 s (1100 iterations)
 Benchmarking python/floats/natsorted_default: Analyzing
 python/floats/natsorted_default
-                        time:   [55.384 ms 55.879 ms 56.373 ms]
+                        time:   [55.046 ms 55.136 ms 55.225 ms]
+Found 1 outliers among 100 measurements (1.00%)
+  1 (1.00%) low mild
 
 Benchmarking python/paths/natsorted_default
 Benchmarking python/paths/natsorted_default: Warming up for 400.00 ms
-Benchmarking python/paths/natsorted_default: Collecting 10 samples in estimated 13.646 s (165 iterations)
+Benchmarking python/paths/natsorted_default: Collecting 100 samples in estimated 62.050 s (800 iterations)
 Benchmarking python/paths/natsorted_default: Analyzing
 python/paths/natsorted_default
-                        time:   [79.136 ms 80.934 ms 82.302 ms]
-Found 1 outliers among 10 measurements (10.00%)
-  1 (10.00%) low severe
+                        time:   [79.480 ms 79.626 ms 79.769 ms]
 
 Benchmarking python/paths/os_sorted
 Benchmarking python/paths/os_sorted: Warming up for 400.00 ms
-Benchmarking python/paths/os_sorted: Collecting 10 samples in estimated 10.698 s (20 iterations)
+Benchmarking python/paths/os_sorted: Collecting 100 samples in estimated 107.54 s (200 iterations)
 Benchmarking python/paths/os_sorted: Analyzing
-python/paths/os_sorted  time:   [538.10 ms 547.52 ms 556.41 ms]
+python/paths/os_sorted  time:   [543.86 ms 549.96 ms 554.40 ms]
+Found 2 outliers among 100 measurements (2.00%)
+  2 (2.00%) low severe
 
 rust/files/natsorted_default
-                        time:   [16.651 ms 17.182 ms 17.603 ms]
+                        time:   [14.550 ms 14.766 ms 14.980 ms]
+Found 1 outliers among 100 measurements (1.00%)
 rust/files/natsorted_real
-                        time:   [17.229 ms 17.877 ms 18.361 ms]
-Found 1 outliers among 10 measurements (10.00%)
+                        time:   [14.374 ms 14.616 ms 14.860 ms]
 rust/files/natsorted_ignorecase
-                        time:   [17.108 ms 17.983 ms 18.599 ms]
+                        time:   [14.097 ms 14.467 ms 14.820 ms]
+Found 13 outliers among 100 measurements (13.00%)
 rust/files/natsorted_path
-                        time:   [19.519 ms 19.714 ms 20.028 ms]
+                        time:   [16.734 ms 17.322 ms 17.920 ms]
+Found 25 outliers among 100 measurements (25.00%)
 rust/floats/natsorted_default
-                        time:   [8.5822 ms 8.7441 ms 8.8967 ms]
+                        time:   [7.6089 ms 7.7141 ms 7.8243 ms]
+Found 2 outliers among 100 measurements (2.00%)
 rust/floats/natsorted_real
-                        time:   [7.0230 ms 7.1760 ms 7.2847 ms]
-Found 1 outliers among 10 measurements (10.00%)
+                        time:   [7.1611 ms 7.3109 ms 7.4641 ms]
+Found 1 outliers among 100 measurements (1.00%)
 rust/floats/natsorted_ignorecase
-                        time:   [8.2490 ms 8.3528 ms 8.4444 ms]
+                        time:   [7.2768 ms 7.4034 ms 7.5350 ms]
+Found 3 outliers among 100 measurements (3.00%)
 rust/floats/natsorted_path
-                        time:   [8.6996 ms 8.9397 ms 9.0886 ms]
+                        time:   [7.3460 ms 7.5081 ms 7.6583 ms]
+Found 8 outliers among 100 measurements (8.00%)
 rust/paths/natsorted_default
-                        time:   [10.391 ms 10.609 ms 10.913 ms]
+                        time:   [9.1890 ms 9.3780 ms 9.5470 ms]
+Found 7 outliers among 100 measurements (7.00%)
 rust/paths/natsorted_real
-                        time:   [10.509 ms 10.927 ms 11.259 ms]
+                        time:   [9.3189 ms 9.4336 ms 9.5501 ms]
+Found 2 outliers among 100 measurements (2.00%)
 rust/paths/natsorted_ignorecase
-                        time:   [10.074 ms 10.275 ms 10.660 ms]
+                        time:   [9.2070 ms 9.3138 ms 9.4250 ms]
+Found 1 outliers among 100 measurements (1.00%)
 rust/paths/natsorted_path
-                        time:   [19.954 ms 20.140 ms 20.305 ms]
-Found 1 outliers among 10 measurements (10.00%)
-rust/files/realsorted   time:   [16.708 ms 17.463 ms 18.128 ms]
-Found 1 outliers among 10 measurements (10.00%)
-rust/floats/realsorted  time:   [7.3118 ms 7.5369 ms 7.6611 ms]
-rust/paths/realsorted   time:   [10.077 ms 10.268 ms 10.403 ms]
-rust/paths/os_sorted    time:   [90.162 ms 91.075 ms 92.010 ms]
-rust/startup            time:   [94.969 µs 97.868 µs 99.886 µs]
-Found 1 outliers among 10 measurements (10.00%)
+                        time:   [19.038 ms 19.192 ms 19.345 ms]
+Found 1 outliers among 100 measurements (1.00%)
+rust/files/realsorted   time:   [14.480 ms 14.616 ms 14.759 ms]
+Found 2 outliers among 100 measurements (2.00%)
+rust/floats/realsorted  time:   [6.8259 ms 6.9530 ms 7.0859 ms]
+Found 3 outliers among 100 measurements (3.00%)
+rust/paths/realsorted   time:   [9.5531 ms 9.6514 ms 9.7500 ms]
+rust/paths/os_sorted    time:   [88.482 ms 88.775 ms 89.071 ms]
+Found 1 outliers among 100 measurements (1.00%)
+rust/startup            time:   [96.080 µs 97.124 µs 98.339 µs]
+Found 4 outliers among 100 measurements (4.00%)
+Warning: Unable to complete 100 samples in 60.0s. You may wish to increase target time to 65.6s, or reduce sample count to 90.
 python/files/natsorted_default
-                        time:   [109.33 ms 110.56 ms 111.86 ms]
+                        time:   [116.37 ms 116.74 ms 117.12 ms]
+Found 2 outliers among 100 measurements (2.00%)
 python/floats/natsorted_default
-                        time:   [55.384 ms 55.879 ms 56.373 ms]
+                        time:   [55.046 ms 55.136 ms 55.225 ms]
+Found 1 outliers among 100 measurements (1.00%)
 python/paths/natsorted_default
-                        time:   [79.136 ms 80.934 ms 82.302 ms]
-Found 1 outliers among 10 measurements (10.00%)
-python/paths/os_sorted  time:   [538.10 ms 547.52 ms 556.41 ms]
+                        time:   [79.480 ms 79.626 ms 79.769 ms]
+python/paths/os_sorted  time:   [543.86 ms 549.96 ms 554.40 ms]
+Found 2 outliers among 100 measurements (2.00%)
 
 ================ Rust vs Python ================
 benchmark                      Rust (ms)    Python (ms)  ratio
-paths/os_sorted                91.08        547.52       Rust 6.01x faster
-files/natsorted_default        17.18        110.56       Rust 6.43x faster
-paths/natsorted_default        10.61        80.93        Rust 7.63x faster
-floats/natsorted_default       8.74         55.88        Rust 6.39x faster
+paths/os_sorted                88.78        549.96       Rust 6.19x faster
+files/natsorted_default        14.77        116.74       Rust 7.91x faster
+paths/natsorted_default        9.38         79.63        Rust 8.49x faster
+floats/natsorted_default       7.71         55.14        Rust 7.15x faster
 
 ================ Benchmark Summary ================
 Benchmarks           : 21
@@ -222,9 +264,9 @@ Improved             : 0
 No change            : 0
 Noise threshold      : 0
 Regressed            : 0
-Warnings             : 0
-Outlier reports      : 6
-Peak RSS             : 38564 KiB
-Startup overhead     : 97.87 ms
-Full log saved to    : bench.log
+Warnings             : 1
+Outlier reports      : 18
+Peak RSS             : 37692 KiB
+Startup overhead     : 0.10 ms
+Full log saved to    : bench-metrics/bench.log
 ===================================================

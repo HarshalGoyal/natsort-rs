@@ -9,8 +9,10 @@
 //! cargo bench --bench natsort_bench
 //! ```
 
-use criterion::{black_box, criterion_group, criterion_main, BatchSize, Criterion};
-use natsort::{natsorted_with, os_sorted, realsorted, NsFlags};
+use std::time::Duration;
+
+use criterion::{BatchSize, Criterion, black_box, criterion_group, criterion_main};
+use natsort::{NsFlags, natsorted_with, os_sorted, realsorted};
 use pyo3::prelude::*;
 use pyo3::types::PyList;
 
@@ -76,14 +78,27 @@ fn bench_rust_algorithms(c: &mut Criterion) {
     for (dname, data) in datasets() {
         let refs = to_refs(&data);
         c.bench_function(&format!("rust/{dname}/realsorted"), |b| {
-            b.iter_batched(|| refs.clone(), |r| black_box(realsorted(&r)), BatchSize::SmallInput)
+            b.iter_batched(
+                || refs.clone(),
+                |r| black_box(realsorted(&r)),
+                BatchSize::SmallInput,
+            )
         });
         if dname == "paths" {
             c.bench_function("rust/paths/os_sorted", |b| {
-                b.iter_batched(|| refs.clone(), |r| black_box(os_sorted(&r)), BatchSize::SmallInput)
+                b.iter_batched(
+                    || refs.clone(),
+                    |r| black_box(os_sorted(&r)),
+                    BatchSize::SmallInput,
+                )
             });
         }
     }
+
+    // Startup overhead: sort 1 element to measure process init + alloc.
+    c.bench_function("rust/startup", |b| {
+        b.iter(|| black_box(natsorted_with(&["a"], NsFlags::DEFAULT)))
+    });
 }
 
 // ── Python·reference bench ─────────────────────────────────────────
@@ -115,11 +130,50 @@ fn bench_python_reference(c: &mut Criterion) {
             })
         });
     }
+
+    // Python's os_sorted has no flag-based natsorted equivalent; benchmark it
+    // directly on the nested-path dataset to mirror rust/paths/os_sorted.
+    let paths = &data[2].1;
+    let refs = to_refs(paths);
+    c.bench_function("python/paths/os_sorted", |b| {
+        b.iter(|| {
+            Python::with_gil(|py| {
+                let py_list = PyList::new_bound(py, refs.iter().copied());
+                let items: Vec<String> = py
+                    .import_bound("natsort")
+                    .expect("natsort import")
+                    .call_method1("os_sorted", (py_list,))
+                    .unwrap()
+                    .extract()
+                    .unwrap();
+                items.len()
+            })
+        })
+    });
 }
 
-criterion_group!(
-    benches,
-    bench_rust_algorithms,
-    bench_python_reference,
-);
-criterion_main!(benches);
+criterion_group! {
+    name = rust_benches;
+    config = rust_config();
+    targets = bench_rust_algorithms
+}
+criterion_group! {
+    name = python_benches;
+    config = python_config();
+    targets = bench_python_reference
+}
+criterion_main!(rust_benches, python_benches);
+
+fn rust_config() -> Criterion {
+    Criterion::default()
+        .warm_up_time(Duration::from_millis(400))
+        .measurement_time(Duration::from_secs(10))
+        .sample_size(100)
+}
+
+fn python_config() -> Criterion {
+    Criterion::default()
+        .warm_up_time(Duration::from_millis(400))
+        .measurement_time(Duration::from_secs(60))
+        .sample_size(100)
+}

@@ -1,7 +1,7 @@
 //! OS path sorting: mimics file explorer / Finder sort order.
 //!
 //! On Unix, this uses `ns.LOCALE | ns.PATH | ns.IGNORECASE` as a fallback
-/// when ICU is not available.  On Windows, it would use `StrCmpLogicalW`.
+//! when ICU is not available.  On Windows, it would use `StrCmpLogicalW`.
 
 use crate::keygen::NatsortKey;
 use crate::ns::NsFlags;
@@ -21,7 +21,10 @@ pub fn os_sort_key(path: &str) -> Vec<Vec<NatsortKeyPart>> {
     let components = split_path_components(path);
     // Reuse a single key generator across all components of this path.
     let kg = NatsortKey::new(NsFlags::LOCALE | NsFlags::PATH | NsFlags::IGNORECASE);
-    components.into_iter().map(|component| kg.key(component)).collect()
+    components
+        .into_iter()
+        .map(|component| kg.key(component))
+        .collect()
 }
 
 /// Compare two OS sort keys component-by-component.
@@ -83,7 +86,12 @@ fn split_extension(filename: &str) -> (&str, Vec<&str>) {
 
         // Check if it looks like a decimal number (e.g., ".5" or ".10").
         let after_dot = &suffix[1..];
-        if after_dot.chars().next().map(|c| c.is_ascii_digit()).unwrap_or(false) {
+        if after_dot
+            .chars()
+            .next()
+            .map(|c| c.is_ascii_digit())
+            .unwrap_or(false)
+        {
             break; // Decimal number suffix → stop.
         }
 
@@ -133,9 +141,7 @@ pub fn os_sorted(items: &[&str]) -> Vec<String> {
         .enumerate()
         .map(|(i, item)| (os_sort_key(item), i, *item))
         .collect();
-    decorated.sort_by(|a, b| {
-        os_key_cmp(&a.0, &b.0).then_with(|| a.1.cmp(&b.1))
-    });
+    decorated.sort_by(|a, b| os_key_cmp(&a.0, &b.0).then_with(|| a.1.cmp(&b.1)));
     decorated
         .into_iter()
         .map(|(_, _, item)| item.to_string())
@@ -158,22 +164,17 @@ mod tests {
     fn os_sort_basic() {
         let data = vec!["/dir/file10.txt", "/dir/file2.txt", "/dir/file1.txt"];
         let result = os_sorted(&data);
-        assert_eq!(result, vec![
-            "/dir/file1.txt",
-            "/dir/file2.txt",
-            "/dir/file10.txt",
-        ]);
+        assert_eq!(
+            result,
+            vec!["/dir/file1.txt", "/dir/file2.txt", "/dir/file10.txt",]
+        );
     }
 
     #[test]
     fn os_sort_extension_handling() {
         let data = vec!["file(10).txt", "file(2).txt", "file(1).txt"];
         let result = os_sorted(&data);
-        assert_eq!(result, vec![
-            "file(1).txt",
-            "file(2).txt",
-            "file(10).txt",
-        ]);
+        assert_eq!(result, vec!["file(1).txt", "file(2).txt", "file(10).txt",]);
     }
 
     #[test]
@@ -181,20 +182,14 @@ mod tests {
         let data = vec!["/Dir/B.txt", "/dir/a.txt"];
         let result = os_sorted(&data);
         // Both have same dir component, case-insensitive.
-        assert_eq!(result, vec![
-            "/dir/a.txt",
-            "/Dir/B.txt",
-        ]);
+        assert_eq!(result, vec!["/dir/a.txt", "/Dir/B.txt",]);
     }
 
     #[test]
     fn os_sort_multiple_extensions() {
         let data = vec!["file.tar.gz", "file2.tar.gz"];
         let result = os_sorted(&data);
-        assert_eq!(result, vec![
-            "file.tar.gz",
-            "file2.tar.gz",
-        ]);
+        assert_eq!(result, vec!["file.tar.gz", "file2.tar.gz",]);
     }
 
     #[test]

@@ -197,7 +197,7 @@ pub fn try_convert_to_number(s: &str) -> NatsortKeyPart {
 
     // Convert Unicode digits to ASCII for parsing
     let ascii_s = convert_unicode_to_ascii(s);
-    
+
     // Fast path: check if it looks like a number.
     let first_char = ascii_s.chars().next().unwrap();
     if !first_char.is_ascii_digit() && first_char != '+' && first_char != '-' && first_char != '.' {
@@ -224,7 +224,11 @@ pub fn try_convert_to_number(s: &str) -> NatsortKeyPart {
 /// - NANLAST: `('', +inf, '3')` for NaN, `('', +inf, '1')` for NaN replacement
 pub fn convert_number_with_nan(val: f64, nanlast: bool) -> Vec<NatsortKeyPart> {
     if val.is_nan() {
-        let nan_val = if nanlast { f64::INFINITY } else { f64::NEG_INFINITY };
+        let nan_val = if nanlast {
+            f64::INFINITY
+        } else {
+            f64::NEG_INFINITY
+        };
         vec![
             NatsortKeyPart::Str("".into()),
             NatsortKeyPart::Float(nan_val),
@@ -266,10 +270,7 @@ mod tests {
 
     #[test]
     fn insert_sentinels_first_is_numeric() {
-        let parts = vec![
-            NatsortKeyPart::Int(10),
-            NatsortKeyPart::Str("a".into()),
-        ];
+        let parts = vec![NatsortKeyPart::Int(10), NatsortKeyPart::Str("a".into())];
         let result = insert_sentinels(parts);
         assert_eq!(
             result,
@@ -283,10 +284,7 @@ mod tests {
 
     #[test]
     fn insert_sentinels_adjacent_numbers() {
-        let parts = vec![
-            NatsortKeyPart::Int(10),
-            NatsortKeyPart::Int(5),
-        ];
+        let parts = vec![NatsortKeyPart::Int(10), NatsortKeyPart::Int(5)];
         let result = insert_sentinels(parts);
         assert_eq!(
             result,
@@ -328,7 +326,10 @@ mod tests {
 
     #[test]
     fn try_convert_string() {
-        assert_eq!(try_convert_to_number("abc"), NatsortKeyPart::Str("abc".into()));
+        assert_eq!(
+            try_convert_to_number("abc"),
+            NatsortKeyPart::Str("abc".into())
+        );
         assert_eq!(try_convert_to_number("."), NatsortKeyPart::Str(".".into()));
         assert_eq!(try_convert_to_number(""), NatsortKeyPart::Str("".into()));
     }
@@ -336,10 +337,7 @@ mod tests {
     #[test]
     fn full_key_10a() {
         // Simulate: split "10a" → ["10", "a"] → convert → insert_sentinels
-        let raw_parts = vec![
-            try_convert_to_number("10"),
-            try_convert_to_number("a"),
-        ];
+        let raw_parts = vec![try_convert_to_number("10"), try_convert_to_number("a")];
         let result = insert_sentinels(raw_parts);
         assert_eq!(
             result,
@@ -353,17 +351,11 @@ mod tests {
 
     #[test]
     fn full_key_a10() {
-        let raw_parts = vec![
-            try_convert_to_number("a"),
-            try_convert_to_number("10"),
-        ];
+        let raw_parts = vec![try_convert_to_number("a"), try_convert_to_number("10")];
         let result = insert_sentinels(raw_parts);
         assert_eq!(
             result,
-            vec![
-                NatsortKeyPart::Str("a".into()),
-                NatsortKeyPart::Int(10),
-            ]
+            vec![NatsortKeyPart::Str("a".into()), NatsortKeyPart::Int(10),]
         );
     }
 

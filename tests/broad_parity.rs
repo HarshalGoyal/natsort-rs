@@ -4,7 +4,7 @@
 //! test suite (`../python_src/tests/test_natsorted.py`, etc.).
 
 use natsort::{
-    decode_bytes, decode_bytes_ascii, natsorted_bytes, natsorted_bytes_ignorecase, Item, NsFlags,
+    Item, NsFlags, decode_bytes, decode_bytes_ascii, natsorted_bytes, natsorted_bytes_ignorecase,
 };
 use pyo3::prelude::*;
 
@@ -26,7 +26,8 @@ fn py_natsorted_alg(py: Python<'_>, data: &[&str], flag_name: &str) -> Vec<Strin
     let kw = pyo3::types::PyDict::new_bound(py);
     kw.set_item("alg", flag_val).unwrap();
     let py_list = pyo3::types::PyList::new_bound(py, data);
-    ns_mod.call_method("natsorted", (py_list,), Some(&kw))
+    ns_mod
+        .call_method("natsorted", (py_list,), Some(&kw))
         .unwrap()
         .extract::<Vec<String>>()
         .unwrap()
@@ -37,37 +38,55 @@ fn py_natsorted_alg(py: Python<'_>, data: &[&str], flag_name: &str) -> Vec<Strin
 #[test]
 fn bp_basic_integers() {
     let data = vec!["4", "8", "2", "10", "3"];
-    assert_eq!(natsort::natsorted(&data), Python::with_gil(|g| py_natsorted(g, &data)));
+    assert_eq!(
+        natsort::natsorted(&data),
+        Python::with_gil(|g| py_natsorted(g, &data))
+    );
 }
 
 #[test]
 fn bp_basic_strings() {
     let data = vec!["b", "a", "c"];
-    assert_eq!(natsort::natsorted(&data), Python::with_gil(|g| py_natsorted(g, &data)));
+    assert_eq!(
+        natsort::natsorted(&data),
+        Python::with_gil(|g| py_natsorted(g, &data))
+    );
 }
 
 #[test]
 fn bp_numbers_before_text() {
     let data = vec!["b", "2", "a", "1"];
-    assert_eq!(natsort::natsorted(&data), Python::with_gil(|g| py_natsorted(g, &data)));
+    assert_eq!(
+        natsort::natsorted(&data),
+        Python::with_gil(|g| py_natsorted(g, &data))
+    );
 }
 
 #[test]
 fn bp_empty_string() {
     let data = vec!["", "a", "1"];
-    assert_eq!(natsort::natsorted(&data), Python::with_gil(|g| py_natsorted(g, &data)));
+    assert_eq!(
+        natsort::natsorted(&data),
+        Python::with_gil(|g| py_natsorted(g, &data))
+    );
 }
 
 #[test]
 fn bp_single_element() {
     let data = vec!["hello"];
-    assert_eq!(natsort::natsorted(&data), Python::with_gil(|g| py_natsorted(g, &data)));
+    assert_eq!(
+        natsort::natsorted(&data),
+        Python::with_gil(|g| py_natsorted(g, &data))
+    );
 }
 
 #[test]
 fn bp_already_sorted() {
     let data = vec!["1", "2", "3"];
-    assert_eq!(natsort::natsorted(&data), Python::with_gil(|g| py_natsorted(g, &data)));
+    assert_eq!(
+        natsort::natsorted(&data),
+        Python::with_gil(|g| py_natsorted(g, &data))
+    );
 }
 
 #[test]
@@ -84,28 +103,46 @@ fn bp_reverse_sort() {
 #[test]
 fn bp_file_names() {
     let data = vec!["file10.txt", "file2.txt", "file1.txt"];
-    assert_eq!(natsort::natsorted(&data), Python::with_gil(|g| py_natsorted(g, &data)));
+    assert_eq!(
+        natsort::natsorted(&data),
+        Python::with_gil(|g| py_natsorted(g, &data))
+    );
 }
 
 #[test]
 fn bp_mixed_alphanumeric() {
     let data = vec!["file10.5.txt", "file2.3.txt", "file1.10.txt"];
-    assert_eq!(natsort::natsorted(&data), Python::with_gil(|g| py_natsorted(g, &data)));
+    assert_eq!(
+        natsort::natsorted(&data),
+        Python::with_gil(|g| py_natsorted(g, &data))
+    );
 }
 
 #[test]
 fn bp_image_files() {
     let data = vec![
-        "img12.png", "img10.png", "img2.png", "img1.png", "img20.png",
-        "img19.png", "original_img.png", "image5.jpg",
+        "img12.png",
+        "img10.png",
+        "img2.png",
+        "img1.png",
+        "img20.png",
+        "img19.png",
+        "original_img.png",
+        "image5.jpg",
     ];
-    assert_eq!(natsort::natsorted(&data), Python::with_gil(|g| py_natsorted(g, &data)));
+    assert_eq!(
+        natsort::natsorted(&data),
+        Python::with_gil(|g| py_natsorted(g, &data))
+    );
 }
 
 #[test]
 fn bp_numbers_then_letters() {
     let data = vec!["1a", "2a", "10a"];
-    assert_eq!(natsort::natsorted(&data), Python::with_gil(|g| py_natsorted(g, &data)));
+    assert_eq!(
+        natsort::natsorted(&data),
+        Python::with_gil(|g| py_natsorted(g, &data))
+    );
 }
 
 // ── Signed / REAL mode ───────────────────────────────────────
@@ -114,7 +151,10 @@ fn bp_numbers_then_letters() {
 fn bp_signed_minus_five() {
     // Without SIGNED: "-" is text, "5" is number
     let data = vec!["-5", "3", "-1", "10"];
-    assert_eq!(natsort::natsorted(&data), Python::with_gil(|g| py_natsorted(g, &data)));
+    assert_eq!(
+        natsort::natsorted(&data),
+        Python::with_gil(|g| py_natsorted(g, &data))
+    );
 }
 
 #[test]
@@ -146,7 +186,10 @@ fn bp_real_mode_decimals() {
 #[test]
 fn bp_sci_notation_no_float() {
     let data = vec!["1e10", "1e2", "100"];
-    assert_eq!(natsort::natsorted(&data), Python::with_gil(|g| py_natsorted(g, &data)));
+    assert_eq!(
+        natsort::natsorted(&data),
+        Python::with_gil(|g| py_natsorted(g, &data))
+    );
 }
 
 #[test]
@@ -223,7 +266,10 @@ fn bp_path_mode() {
 fn bp_os_sorted_basic() {
     let data = vec!["/dir/file10.txt", "/dir/file2.txt", "/dir/file1.txt"];
     let rs = natsort::os_sorted(&data);
-    assert_eq!(rs, vec!["/dir/file1.txt", "/dir/file2.txt", "/dir/file10.txt"]);
+    assert_eq!(
+        rs,
+        vec!["/dir/file1.txt", "/dir/file2.txt", "/dir/file10.txt"]
+    );
 }
 
 #[test]
@@ -246,7 +292,7 @@ fn bp_os_sorted_multiple_ext() {
 fn bp_mixed_types() {
     let data = vec![
         Item::Int(10),
-        Item::from_str("2"),
+        Item::parse_item("2"),
         Item::Float(3.5),
         Item::Str("apple".to_string()),
     ];
@@ -286,22 +332,14 @@ fn bp_mixed_none_first() {
 
 #[test]
 fn bp_mixed_nan_default() {
-    let data = vec![
-        Item::Float(1.0),
-        Item::Float(f64::NAN),
-        Item::Float(2.0),
-    ];
+    let data = vec![Item::Float(1.0), Item::Float(f64::NAN), Item::Float(2.0)];
     let rs = natsort::natsorted_mixed(&data);
     assert!(rs.first().unwrap().is_nan());
 }
 
 #[test]
 fn bp_mixed_nan_last() {
-    let data = vec![
-        Item::Float(1.0),
-        Item::Float(f64::NAN),
-        Item::Float(2.0),
-    ];
+    let data = vec![Item::Float(1.0), Item::Float(f64::NAN), Item::Float(2.0)];
     let rs = natsort::natsorted_mixed_with(&data, NsFlags::NANLAST);
     assert!(rs.last().unwrap().is_nan());
 }

@@ -43,7 +43,7 @@ pub use keygen::NatsortKey;
 pub use locale::LocaleStr;
 pub use mixed::{Item, natsorted_mixed, natsorted_mixed_with};
 pub use ns::NsFlags;
-pub use os_sort::{os_sorted, os_sort_key, os_sort_keygen};
+pub use os_sort::{os_sort_key, os_sort_keygen, os_sorted};
 pub use recursive::{NestedItem, natsorted_recursive, natsorted_recursive_with};
 pub use segment::NatsortKeyPart;
 
@@ -100,9 +100,12 @@ pub fn natsorted(items: &[&str]) -> Vec<String> {
 pub fn natsorted_with(items: &[&str], flags: NsFlags) -> Vec<String> {
     // Apply PRESORT: pre-sort by string value to establish tiebreaker order.
     let indexed: Vec<(usize, &str)> = if flags.contains(NsFlags::PRESORT) {
-        let mut indexed_items: Vec<(usize, &str)> =
-            items.iter().enumerate().map(|(i, &item)| (i, item)).collect();
-        indexed_items.sort_by(|&(_, a), &(_, b)| a.cmp(b));
+        let mut indexed_items: Vec<(usize, &str)> = items
+            .iter()
+            .enumerate()
+            .map(|(i, &item)| (i, item))
+            .collect();
+        indexed_items.sort_by_key(|&(_, a)| a);
         // Re-index so that position in presorted array becomes the tiebreaker.
         indexed_items
             .into_iter()
@@ -110,7 +113,11 @@ pub fn natsorted_with(items: &[&str], flags: NsFlags) -> Vec<String> {
             .map(|(new_idx, (_, item))| (new_idx, item))
             .collect()
     } else {
-        items.iter().enumerate().map(|(i, &item)| (i, item)).collect()
+        items
+            .iter()
+            .enumerate()
+            .map(|(i, &item)| (i, item))
+            .collect()
     };
 
     let key_gen = NatsortKey::new(flags);
@@ -297,29 +304,24 @@ mod tests {
     fn os_sorted_basic() {
         let data = vec!["/dir/file10.txt", "/dir/file2.txt", "/dir/file1.txt"];
         let result = os_sorted(&data);
-        assert_eq!(result, vec![
-            "/dir/file1.txt",
-            "/dir/file2.txt",
-            "/dir/file10.txt",
-        ]);
+        assert_eq!(
+            result,
+            vec!["/dir/file1.txt", "/dir/file2.txt", "/dir/file10.txt",]
+        );
     }
 
     #[test]
     fn os_sorted_extension_handling() {
         let data = vec!["file(10).txt", "file(2).txt", "file(1).txt"];
         let result = os_sorted(&data);
-        assert_eq!(result, vec![
-            "file(1).txt",
-            "file(2).txt",
-            "file(10).txt",
-        ]);
+        assert_eq!(result, vec!["file(1).txt", "file(2).txt", "file(10).txt",]);
     }
 
     #[test]
     fn mixed_basic() {
         let data = vec![
             Item::Int(10),
-            Item::from_str("2"),
+            Item::parse_item("2"),
             Item::Float(3.5),
             Item::Str("apple".to_string()),
         ];

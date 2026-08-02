@@ -37,7 +37,7 @@ impl Item {
     ///
     /// Mirrors Python's behavior where `"2"` becomes `Int(2)` and `"apple"`
     /// stays as `Str("apple")`.
-    pub fn from_str(s: &str) -> Self {
+    pub fn parse_item(s: &str) -> Self {
         if let Ok(n) = s.parse::<i64>() {
             return Self::Int(n);
         }
@@ -71,10 +71,7 @@ impl Item {
                         NatsortKeyPart::Str("2".into()),
                     ]
                 } else {
-                    vec![
-                        NatsortKeyPart::Str("".into()),
-                        NatsortKeyPart::Int(*n),
-                    ]
+                    vec![NatsortKeyPart::Str("".into()), NatsortKeyPart::Int(*n)]
                 }
             }
             Self::Float(f) => {
@@ -87,18 +84,17 @@ impl Item {
                     vec![
                         NatsortKeyPart::Str("".into()),
                         NatsortKeyPart::Float(nan_val),
-                        NatsortKeyPart::Str(if flags.contains(NsFlags::NANLAST) {
-                            "3"
-                        } else {
-                            "1"
-                        }
-                        .into()),
+                        NatsortKeyPart::Str(
+                            if flags.contains(NsFlags::NANLAST) {
+                                "3"
+                            } else {
+                                "1"
+                            }
+                            .into(),
+                        ),
                     ]
                 } else {
-                    vec![
-                        NatsortKeyPart::Str("".into()),
-                        NatsortKeyPart::Float(*f),
-                    ]
+                    vec![NatsortKeyPart::Str("".into()), NatsortKeyPart::Float(*f)]
                 }
             }
             Self::NoneVal => {
@@ -174,7 +170,7 @@ fn value_cmp(a: &Item, b: &Item) -> Ordering {
 ///
 /// let data = vec![
 ///     Item::Int(10),
-///     Item::from_str("2"),
+///     Item::parse_item("2"),
 ///     Item::Float(3.5),
 ///     Item::Str("apple".to_string()),
 /// ];
@@ -216,8 +212,8 @@ pub fn natsorted_mixed_with(items: &[Item], flags: NsFlags) -> Vec<Item> {
 fn natsorted_mixed_with_impl(items: &[Item], flags: NsFlags) -> Vec<Item> {
     let mut sorted = items.to_vec();
     sorted.sort_by(|a, b| {
-        let ka = a.key(flags.clone());
-        let kb = b.key(flags.clone());
+        let ka = a.key(flags);
+        let kb = b.key(flags);
         ka.cmp(&kb)
     });
     sorted
@@ -239,7 +235,7 @@ mod tests {
     fn mixed_basic() {
         let data = vec![
             Item::Int(10),
-            Item::from_str("2"),
+            Item::parse_item("2"),
             Item::Float(3.5),
             Item::Str("apple".to_string()),
         ];
@@ -279,11 +275,7 @@ mod tests {
 
     #[test]
     fn mixed_nan_default() {
-        let data = vec![
-            Item::Float(1.0),
-            Item::Float(f64::NAN),
-            Item::Float(2.0),
-        ];
+        let data = vec![Item::Float(1.0), Item::Float(f64::NAN), Item::Float(2.0)];
         let result = natsorted_mixed(&data);
         // Default: NaN → -inf, so it sorts first.
         assert!(result.first().unwrap().is_nan());
@@ -291,11 +283,7 @@ mod tests {
 
     #[test]
     fn mixed_nan_last() {
-        let data = vec![
-            Item::Float(1.0),
-            Item::Float(f64::NAN),
-            Item::Float(2.0),
-        ];
+        let data = vec![Item::Float(1.0), Item::Float(f64::NAN), Item::Float(2.0)];
         let result = natsorted_mixed_with(&data, NsFlags::NANLAST);
         // NANLAST: NaN → +inf, so it sorts last.
         assert!(result.last().unwrap().is_nan());
@@ -304,37 +292,18 @@ mod tests {
     #[test]
     fn mixed_bool_equivalent() {
         // False == 0, True == 1 in Python.
-        let data = vec![
-            Item::Int(1),
-            Item::Int(0),
-            Item::Str("a".to_string()),
-        ];
+        let data = vec![Item::Int(1), Item::Int(0), Item::Str("a".to_string())];
         let result = natsorted_mixed(&data);
         assert_eq!(
             result,
-            vec![
-                Item::Int(0),
-                Item::Int(1),
-                Item::Str("a".to_string()),
-            ]
+            vec![Item::Int(0), Item::Int(1), Item::Str("a".to_string()),]
         );
     }
 
     #[test]
     fn mixed_float_vs_int() {
-        let data = vec![
-            Item::Float(3.5),
-            Item::Int(3),
-            Item::Int(4),
-        ];
+        let data = vec![Item::Float(3.5), Item::Int(3), Item::Int(4)];
         let result = natsorted_mixed(&data);
-        assert_eq!(
-            result,
-            vec![
-                Item::Int(3),
-                Item::Float(3.5),
-                Item::Int(4),
-            ]
-        );
+        assert_eq!(result, vec![Item::Int(3), Item::Float(3.5), Item::Int(4),]);
     }
 }

@@ -8,7 +8,7 @@ use regex::Regex;
 
 use crate::locale::locale_transform;
 use crate::ns::NsFlags;
-use crate::segment::{insert_sentinels, try_convert_to_number, NatsortKeyPart};
+use crate::segment::{NatsortKeyPart, insert_sentinels, try_convert_to_number};
 use crate::unicode_numbers;
 
 /// A compiled natsort key generator.
@@ -155,26 +155,28 @@ fn compile_regex(flags: NsFlags) -> Regex {
 /// Mirrors Python's `regex_chooser` function.
 fn match_pattern(flags: NsFlags) -> String {
     let has_float = flags.contains(NsFlags::FLOAT);
-    
+
     // Get Unicode character sets
-    let (decimals, digits, numeric, _digits_no_decimals, _numeric_no_decimals) = 
+    let (decimals, digits, numeric, _digits_no_decimals, _numeric_no_decimals) =
         unicode_numbers::get_unicode_sets();
-    
+
     // Escape characters for regex character class
     let escape_for_regex = |s: &str| -> String {
-        s.chars().map(|c| {
-            if c == ']' || c == '\\' || c == '^' || c == '-' {
-                format!("\\{}", c)
-            } else {
-                c.to_string()
-            }
-        }).collect()
+        s.chars()
+            .map(|c| {
+                if c == ']' || c == '\\' || c == '^' || c == '-' {
+                    format!("\\{}", c)
+                } else {
+                    c.to_string()
+                }
+            })
+            .collect()
     };
-    
+
     let decimals_class = escape_for_regex(&decimals);
     let _digits_class = escape_for_regex(&digits);
     let _numeric_class = escape_for_regex(&numeric);
-    
+
     if has_float {
         let has_signed = flags.contains(NsFlags::SIGNED);
         let has_noexp = flags.contains(NsFlags::NOEXP);
@@ -184,9 +186,13 @@ fn match_pattern(flags: NsFlags) -> String {
         } else if has_noexp {
             format!(r"((?:[{decimals_class}]+\.?[{decimals_class}]*|\.[{decimals_class}]+))")
         } else if has_signed {
-            format!(r"([-+]?(?:[{decimals_class}]+\.?[{decimals_class}]*(?:[eE][-+]?[{decimals_class}]+)?|\.[{decimals_class}]+(?:[eE][-+]?[{decimals_class}]+)?))")
+            format!(
+                r"([-+]?(?:[{decimals_class}]+\.?[{decimals_class}]*(?:[eE][-+]?[{decimals_class}]+)?|\.[{decimals_class}]+(?:[eE][-+]?[{decimals_class}]+)?))"
+            )
         } else {
-            format!(r"((?:[{decimals_class}]+\.?[{decimals_class}]*(?:[eE][-+]?[{decimals_class}]+)?|\.[{decimals_class}]+(?:[eE][-+]?[{decimals_class}]+)?))")
+            format!(
+                r"((?:[{decimals_class}]+\.?[{decimals_class}]*(?:[eE][-+]?[{decimals_class}]+)?|\.[{decimals_class}]+(?:[eE][-+]?[{decimals_class}]+)?))"
+            )
         }
     } else if flags.contains(NsFlags::SIGNED) {
         format!(r"([-+]?[{decimals_class}]+)")
@@ -234,10 +240,7 @@ mod tests {
         let result = key_gen.key("a10");
         assert_eq!(
             result,
-            vec![
-                NatsortKeyPart::Str("a".into()),
-                NatsortKeyPart::Int(10),
-            ]
+            vec![NatsortKeyPart::Str("a".into()), NatsortKeyPart::Int(10),]
         );
     }
 
@@ -253,10 +256,7 @@ mod tests {
         let result = key_gen.key("-5");
         assert_eq!(
             result,
-            vec![
-                NatsortKeyPart::Str("-".into()),
-                NatsortKeyPart::Int(5),
-            ]
+            vec![NatsortKeyPart::Str("-".into()), NatsortKeyPart::Int(5),]
         );
     }
 
@@ -312,10 +312,7 @@ mod tests {
         let result = key_gen.key("-5");
         assert_eq!(
             result,
-            vec![
-                NatsortKeyPart::Str("".into()),
-                NatsortKeyPart::Int(-5),
-            ]
+            vec![NatsortKeyPart::Str("".into()), NatsortKeyPart::Int(-5),]
         );
     }
 
@@ -325,10 +322,7 @@ mod tests {
         let result = key_gen.key("1.5");
         assert_eq!(
             result,
-            vec![
-                NatsortKeyPart::Str("".into()),
-                NatsortKeyPart::Float(1.5),
-            ]
+            vec![NatsortKeyPart::Str("".into()), NatsortKeyPart::Float(1.5),]
         );
     }
 
@@ -338,10 +332,7 @@ mod tests {
         let result = key_gen.key("1e10");
         assert_eq!(
             result,
-            vec![
-                NatsortKeyPart::Str("".into()),
-                NatsortKeyPart::Float(1e10),
-            ]
+            vec![NatsortKeyPart::Str("".into()), NatsortKeyPart::Float(1e10),]
         );
     }
 
@@ -351,17 +342,14 @@ mod tests {
         let result = key_gen.key("-3.2");
         assert_eq!(
             result,
-            vec![
-                NatsortKeyPart::Str("".into()),
-                NatsortKeyPart::Float(-3.2),
-            ]
+            vec![NatsortKeyPart::Str("".into()), NatsortKeyPart::Float(-3.2),]
         );
     }
 
     #[test]
     fn sorting_order_basic() {
         let key_gen = NatsortKey::default();
-        let items = vec!["4", "8", "2", "10", "3"];
+        let items = ["4", "8", "2", "10", "3"];
         let keys: Vec<_> = items.iter().map(|s| key_gen.key(s)).collect();
 
         let mut sorted_indices: Vec<usize> = (0..keys.len()).collect();
@@ -374,7 +362,7 @@ mod tests {
     #[test]
     fn sorting_order_files() {
         let key_gen = NatsortKey::default();
-        let items = vec!["file10.txt", "file2.txt", "file1.txt"];
+        let items = ["file10.txt", "file2.txt", "file1.txt"];
         let keys: Vec<_> = items.iter().map(|s| key_gen.key(s)).collect();
 
         let mut sorted_indices: Vec<usize> = (0..keys.len()).collect();
@@ -387,7 +375,7 @@ mod tests {
     #[test]
     fn sorting_numbers_before_text() {
         let key_gen = NatsortKey::default();
-        let items = vec!["b", "2", "a", "1"];
+        let items = ["b", "2", "a", "1"];
         let keys: Vec<_> = items.iter().map(|s| key_gen.key(s)).collect();
 
         let mut sorted_indices: Vec<usize> = (0..keys.len()).collect();
@@ -401,7 +389,7 @@ mod tests {
     fn sorting_with_sentinel() {
         // "5" should sort before "a" because ('', 5) < ('a',)
         let key_gen = NatsortKey::default();
-        let items = vec!["a", "5"];
+        let items = ["a", "5"];
         let keys: Vec<_> = items.iter().map(|s| key_gen.key(s)).collect();
 
         let mut sorted_indices: Vec<usize> = (0..keys.len()).collect();
@@ -417,7 +405,7 @@ mod tests {
     fn groupletters_flag() {
         // GROUPLETTERS groups uppercase and lowercase together: Apple, apple, Banana, banana
         let key_gen = NatsortKey::new(NsFlags::GROUPLETTERS);
-        let items = vec!["Banana", "apple", "banana", "Apple"];
+        let items = ["Banana", "apple", "banana", "Apple"];
         let keys: Vec<_> = items.iter().map(|s| key_gen.key(s)).collect();
 
         let mut sorted_indices: Vec<usize> = (0..keys.len()).collect();
@@ -431,7 +419,7 @@ mod tests {
     fn lowercasefirst_flag() {
         // LOWERCASEFIRST puts lowercase first: apple, banana, Apple, Banana
         let key_gen = NatsortKey::new(NsFlags::LOWERCASEFIRST);
-        let items = vec!["Banana", "apple", "banana", "Apple"];
+        let items = ["Banana", "apple", "banana", "Apple"];
         let keys: Vec<_> = items.iter().map(|s| key_gen.key(s)).collect();
 
         let mut sorted_indices: Vec<usize> = (0..keys.len()).collect();
@@ -445,7 +433,7 @@ mod tests {
     fn numafter_flag() {
         // NUMAFTER puts numbers after letters
         let key_gen = NatsortKey::new(NsFlags::NUMAFTER);
-        let items = vec!["b", "2", "a", "1"];
+        let items = ["b", "2", "a", "1"];
         let keys: Vec<_> = items.iter().map(|s| key_gen.key(s)).collect();
 
         let mut sorted_indices: Vec<usize> = (0..keys.len()).collect();
@@ -459,24 +447,22 @@ mod tests {
     fn presort_stability() {
         // PRESORT breaks ties by string value: 'a01' < 'a1' < 'a2'
         // First, presort by string value to establish tiebreaker order.
-        let mut indexed: Vec<(usize, &str)> = vec![
-            (0, "a1"),
-            (1, "a01"),
-            (2, "a2"),
-        ];
-        indexed.sort_by(|&(_, a), &(_, b)| a.cmp(b));
+        let mut indexed: Vec<(usize, &str)> = vec![(0, "a1"), (1, "a01"), (2, "a2")];
+        indexed.sort_by_key(|&(_, a)| a);
         // Re-index based on presorted position.
-        indexed = indexed.into_iter().enumerate().map(|(i, (_, s))| (i, s)).collect();
+        indexed = indexed
+            .into_iter()
+            .enumerate()
+            .map(|(i, (_, s))| (i, s))
+            .collect();
 
         let key_gen = NatsortKey::default();
         let keys: Vec<_> = indexed.iter().map(|&(_, s)| key_gen.key(s)).collect();
 
         let mut sorted_indices: Vec<usize> = (0..keys.len()).collect();
-        sorted_indices.sort_by(|&a, &b| {
-            match keys[a].cmp(&keys[b]) {
-                Ordering::Equal => a.cmp(&b),
-                ord => ord,
-            }
+        sorted_indices.sort_by(|&a, &b| match keys[a].cmp(&keys[b]) {
+            Ordering::Equal => a.cmp(&b),
+            ord => ord,
         });
 
         let sorted: Vec<&str> = sorted_indices.iter().map(|&i| indexed[i].1).collect();

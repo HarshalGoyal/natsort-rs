@@ -17,7 +17,7 @@
 //! When the interpreter cannot import `natsort`, the tests fail loudly with a
 //! actionable message rather than silently passing.
 
-use natsort::{natsorted, natsorted_with, realsorted, NsFlags};
+use natsort::{NsFlags, natsorted, natsorted_with, realsorted};
 use pyo3::prelude::*;
 
 /// Imports the Python `natsort` module, with a diagnostic on failure.
@@ -229,7 +229,10 @@ fn parity_realsorted() {
             .expect("realsorted returns a list of str")
     });
 
-    assert_eq!(rs_result, py_result, "Rust realsorted output differs from Python");
+    assert_eq!(
+        rs_result, py_result,
+        "Rust realsorted output differs from Python"
+    );
 }
 
 /// Case-insensitive sorting.
@@ -251,15 +254,24 @@ fn parity_ignorecase() {
             .expect("returns list of str")
     });
 
-    assert_eq!(rs_result, py_result, "IGNORECASE output differs from Python");
+    assert_eq!(
+        rs_result, py_result,
+        "IGNORECASE output differs from Python"
+    );
 }
 
 /// Larger dataset to stress-test ordering stability.
 #[test]
 fn parity_larger_dataset() {
     let data = vec![
-        "img12.png", "img10.png", "img2.png", "img1.png", "img20.png",
-        "img19.png", "original_img.png", "image5.jpg",
+        "img12.png",
+        "img10.png",
+        "img2.png",
+        "img1.png",
+        "img20.png",
+        "img19.png",
+        "original_img.png",
+        "image5.jpg",
     ];
     let rs_result = natsorted(&data);
 
@@ -271,7 +283,10 @@ fn parity_larger_dataset() {
             .expect("natsorted returns a list of str")
     });
 
-    assert_eq!(rs_result, py_result, "Larger dataset output differs from Python");
+    assert_eq!(
+        rs_result, py_result,
+        "Larger dataset output differs from Python"
+    );
 }
 
 // ── Phase 2 parity tests ───────────────────────────────────────
@@ -391,7 +406,10 @@ fn parity_groupletters() {
             .expect("returns list of str")
     });
 
-    assert_eq!(rs_result, py_result, "GROUPLETTERS output differs from Python");
+    assert_eq!(
+        rs_result, py_result,
+        "GROUPLETTERS output differs from Python"
+    );
 }
 
 /// LOWERCASEFIRST: lowercase before uppercase.
@@ -413,7 +431,10 @@ fn parity_lowercasefirst() {
             .expect("returns list of str")
     });
 
-    assert_eq!(rs_result, py_result, "LOWERCASEFIRST output differs from Python");
+    assert_eq!(
+        rs_result, py_result,
+        "LOWERCASEFIRST output differs from Python"
+    );
 }
 
 /// Recursive descent: sorting nested lists.
@@ -456,9 +477,8 @@ fn parity_os_sorted_extensions() {
     let rs_result = natsort::os_sorted(&data);
 
     // Should sort by number in parentheses: 1, 2, 10
-    assert_eq!(rs_result, vec![
-        "file(1).txt",
-        "file(2).txt",
-        "file(10).txt",
-    ]);
+    assert_eq!(
+        rs_result,
+        vec!["file(1).txt", "file(2).txt", "file(10).txt",]
+    );
 }

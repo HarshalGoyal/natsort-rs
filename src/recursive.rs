@@ -34,7 +34,7 @@ impl NestedItem {
                 // a single key by concatenating, with a separator between children.
                 let mut result = Vec::new();
                 for child in children {
-                    let child_key = child.key(flags.clone());
+                    let child_key = child.key(flags);
                     result.extend(child_key);
                 }
                 // If empty branch, return empty key (sorts first).
@@ -160,7 +160,7 @@ impl NestedItem {
 /// ```
 pub fn natsorted_recursive(items: &[NestedItem]) -> Vec<NestedItem> {
     let mut sorted = items.to_vec();
-    sorted.sort_by(|a, b| a.cmp(b));
+    sorted.sort();
     sorted
 }
 
@@ -168,8 +168,8 @@ pub fn natsorted_recursive(items: &[NestedItem]) -> Vec<NestedItem> {
 pub fn natsorted_recursive_with(items: &[NestedItem], flags: NsFlags) -> Vec<NestedItem> {
     let mut sorted = items.to_vec();
     sorted.sort_by(|a, b| {
-        let ka = a.key(flags.clone());
-        let kb = b.key(flags.clone());
+        let ka = a.key(flags);
+        let kb = b.key(flags);
         ka.cmp(&kb)
     });
     sorted

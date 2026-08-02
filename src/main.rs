@@ -4,7 +4,7 @@
 
 use std::io::{self, Read};
 
-use natsort::{natsorted_with, realsorted, NsFlags};
+use natsort::{NsFlags, natsorted_with, realsorted};
 
 /// CLI arguments structure
 #[derive(Debug)]
@@ -18,14 +18,14 @@ pub struct CliArgs {
 
 /// Parse command line arguments
 pub fn parse_args() -> CliArgs {
-    let mut args = std::env::args().skip(1);
+    let args = std::env::args().skip(1);
     let mut files = Vec::new();
     let mut ignore_case = false;
     let mut reverse = false;
     let mut real = false;
     let mut help = false;
-    
-    while let Some(arg) = args.next() {
+
+    for arg in args {
         match arg.as_str() {
             "-h" | "--help" => {
                 help = true;
@@ -48,7 +48,7 @@ pub fn parse_args() -> CliArgs {
             }
         }
     }
-    
+
     CliArgs {
         files,
         ignore_case,
@@ -73,49 +73,49 @@ pub fn print_usage() {
 /// Main CLI entry point
 pub fn run_cli() -> Result<(), Box<dyn std::error::Error>> {
     let args = parse_args();
-    
+
     if args.help {
         print_usage();
         return Ok(());
     }
-    
+
     let flags = if args.ignore_case {
         NsFlags::IGNORECASE
     } else {
         NsFlags::default()
     };
-    
+
     if args.files.is_empty() {
         // Read from stdin
         let mut input = String::new();
         io::stdin().read_to_string(&mut input)?;
         let lines: Vec<&str> = input.lines().collect();
-        
+
         let sorted = if args.real {
             realsorted(&lines)
         } else {
             natsorted_with(&lines, flags)
         };
-        
+
         for line in sorted {
             println!("{}", line);
         }
     } else {
         // Convert Vec<String> to Vec<&str> for the functions
         let files: Vec<&str> = args.files.iter().map(|s| s.as_str()).collect();
-        
+
         // Sort files directly
         let sorted = if args.real {
             realsorted(&files)
         } else {
             natsorted_with(&files, flags)
         };
-        
+
         for file in sorted {
             println!("{}", file);
         }
     }
-    
+
     Ok(())
 }
 

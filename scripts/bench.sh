@@ -51,7 +51,10 @@ if [ "$group" != "rust" ] && ! python3 -c "import natsort" >/dev/null 2>&1; then
     group="rust"
 fi
 
-ARGS=(--warm-up-time 0.4 --measurement-time 10 --sample-size 10)
+# Measurement time / sample size are configured per group in the harness
+# (rust: 10s, python: 60s) so the slow Python reference benches get enough
+# time to collect 100 samples.
+ARGS=()
 GROUP_FILTER=""
 case "$group" in
     rust)   GROUP_FILTER="rust" ;;
@@ -80,11 +83,14 @@ wait "$BENCH_PID" || true
 
 # ── Parse output: summary table ─────────────────────────────────────
 tr '\r' '\n' < "$LOG.raw" | tee "$LOG" | awk -v rss="$MAX_RSS_KB" '
-function median(s,    a,t,i,k,num){
+function median(s,    a,t,i,k,num,unit){
     a=s; sub(/^.*\[/,"",a); sub(/\].*$/,"",a)
     gsub(/[[:space:]]+/," ",a); sub(/^ /,"",a)
     k=0; n=split(a,t," ")
     for(i=1;i<=n;i++) if(t[i] ~ /^[0-9]+(\.[0-9]+)?$/) num[++k]=t[i]+0+0
+    unit = (index(s,"µs")>0) ? "us" : (index(s,"ns")>0 ? "ns" : "ms")
+    if (unit=="us") return num[2]/1000.0
+    if (unit=="ns") return num[2]/1000000.0
     return num[2]
 }
 
@@ -148,11 +154,14 @@ END {
 mkdir -p bench-metrics
 
 awk -v rss="$MAX_RSS_KB" '
-function median(s,    a,t,i,k,num){
+function median(s,    a,t,i,k,num,unit){
     a=s; sub(/^.*\[/,"",a); sub(/\].*$/,"",a)
     gsub(/[[:space:]]+/," ",a); sub(/^ /,"",a)
     k=0; n=split(a,t," ")
     for(i=1;i<=n;i++) if(t[i] ~ /^[0-9]+(\.[0-9]+)?$/) num[++k]=t[i]+0+0
+    unit = (index(s,"µs")>0) ? "us" : (index(s,"ns")>0 ? "ns" : "ms")
+    if (unit=="us") return num[2]/1000.0
+    if (unit=="ns") return num[2]/1000000.0
     return num[2]
 }
 
@@ -173,7 +182,7 @@ function median(s,    a,t,i,k,num){
 END {
     startup = (tr["startup"] > 0) ? tr["startup"] : 0
     printf "{\n"
-    printf "  \"methodology\": \"Criterion.rs 0.5.1, warm-up 0.4s, measurement 10s, sample-size 10\",\n"
+    printf "  \"methodology\": \"Criterion.rs 0.5.1, warm-up 0.4s, measurement 10s (rust) / 60s (python), sample-size 100\",\n"
     printf "  \"rss_kb\": %d,\n", rss
     printf "  \"startup_ms\": %.2f,\n", startup
     printf "  \"benchmarks\": {\n"
