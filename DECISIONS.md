@@ -123,10 +123,10 @@ Status: **Partially Implemented**
 Python `ns_enum.py` defines flags with specific bit values assigned in declaration order.
 
 ### Rust Behaviour
-Rust `NsFlags` mirrors Python's exact bit values, not the values documented in `.agent/` planning files.
+Rust `NsFlags` mirrors Python's exact bit values (measured at port time), not the values suggested in the original planning notes.
 
 ### Reason
-Planning documentation contained incorrect flag values. Actual implementation follows Python source code.
+Early planning notes contained incorrect flag values. The actual implementation follows the authoritative Python source (`natsort/ns_enum.py`).
 
 ### Trade-offs
 - **Pros**: 100% compatibility with Python flag values
