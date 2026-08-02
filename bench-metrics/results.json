@@ -1,0 +1,23 @@
+{
+  "methodology": "Criterion.rs 0.5.1, warm-up 0.4s, measurement 10s, sample-size 10",
+  "rss_kb": 38564,
+  "startup_ms": 97.87,
+  "benchmarks": {
+    "floats/natsorted_real": {"rust_ms": 7.18},
+    "paths/realsorted": {"rust_ms": 10.27},
+    "files/realsorted": {"rust_ms": 17.46},
+    "floats/natsorted_path": {"rust_ms": 8.94},
+    "floats/natsorted_ignorecase": {"rust_ms": 8.35},
+    "paths/os_sorted": {"rust_ms": 91.08, "python_ms": 547.52, "speedup": 6.01},
+    "paths/natsorted_path": {"rust_ms": 20.14},
+    "paths/natsorted_real": {"rust_ms": 10.93},
+    "files/natsorted_path": {"rust_ms": 19.71},
+    "files/natsorted_ignorecase": {"rust_ms": 17.98},
+    "files/natsorted_real": {"rust_ms": 17.88},
+    "files/natsorted_default": {"rust_ms": 17.18, "python_ms": 110.56, "speedup": 6.43},
+    "paths/natsorted_ignorecase": {"rust_ms": 10.28},
+    "paths/natsorted_default": {"rust_ms": 10.61, "python_ms": 80.93, "speedup": 7.63},
+    "floats/realsorted": {"rust_ms": 7.54},
+    "floats/natsorted_default": {"rust_ms": 8.74, "python_ms": 55.88, "speedup": 6.39}
+  }
+}

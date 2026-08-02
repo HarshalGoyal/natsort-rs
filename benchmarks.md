@@ -1,55 +1,79 @@
 # Performance Benchmarks
 
-Benchmarks run on WSL2/Ubuntu 22.04, Rust 1.97, debug mode disabled (`cargo bench`).
+Benchmarks run on WSL2/Ubuntu 22.04, Rust 1.97, Criterion.rs `cargo bench`.
+Python reference measured from the same harness (Python natsort 8.4.0 via PyO3).
 
-## Benchmark Results
+See [bench-metrics/methodology.md](bench-metrics/methodology.md) for detailed methodology.
 
-| Dataset Size | `natsorted()` Time | Notes |
-|--------------|-------------------|-------|
-| 1,000 strings | ~10 ms | Random filenames with embedded numbers |
-| 10,000 strings | ~130 ms | Same distribution |
+## Rust vs Python — Measured Speedups
 
-*Measured via Criterion.rs with 100 samples per configuration.*
+All times are Criterion median (ms) for 10k–20k items.
 
-## Feature-Specific Benchmarks
+| Benchmark | Rust (ms) | Python (ms) | Speedup |
+|-----------|-----------|-------------|---------|
+| files/natsorted_default | 15.16 | 112.54 | **7.4× faster** |
+| paths/natsorted_default | 9.38 | 80.29 | **8.6× faster** |
+| floats/natsorted_default | 8.22 | 53.70 | **6.5× faster** |
+| paths/os_sorted | 87.92 | 542.38 | **6.2× faster** |
 
-### realsorted (signed floats)
-| Dataset Size | Time |
-|--------------|------|
-| 5,000 signed floats | ~54 ms |
+## Additional Metrics
 
-### os_sorted (path sorting)
-Path sorting has higher overhead due to component splitting and extension handling. Full benchmark not included due to execution time.
+| Metric | Value | Notes |
+|--------|-------|-------|
+| Startup overhead | ~2 ms | Measured by sorting 1 element (process init + alloc) |
+| Peak RSS | measured per run | Reported in `bench-metrics/results.json` |
 
-## Comparison with Python natsort
+See `bench-metrics/results.json` for structured data with all benchmarks and metrics.
 
-Based on measured performance characteristics:
+## Rust Algorithm Breakdown
 
-- **Rust natsort-rs**: ~130ms for 10k strings (native compilation, zero-copy operations)
-- **Python natsort**: Estimated ~2,000–3,000ms for 10k strings (interpreted, GC overhead)
+### natsorted (by dataset × flag)
 
-**Estimated speedup: ~15–20x faster** for typical workloads.
+| Dataset | default | real | ignorecase | path |
+|---------|---------|------|------------|------|
+| files (20k) | 15.16 ms | 15.89 ms | 14.72 ms | 17.57 ms |
+| floats (10k) | 8.22 ms | 7.63 ms | 8.32 ms | 8.06 ms |
+| paths (10k) | 9.38 ms | 10.18 ms | 9.69 ms | 18.58 ms |
 
-Performance gains come from:
-1. Native machine code vs interpreted bytecode
-2. Zero-copy string handling
-3. Pre-compiled regex patterns
-4. No garbage collection pauses
-5. Efficient memory layout (Vec vs Python list)
+### realsorted
+
+| Dataset | Time |
+|---------|------|
+| files (20k) | 15.46 ms |
+| floats (10k) | 7.45 ms |
+| paths (10k) | 9.87 ms |
+
+### os_sorted
+
+| Dataset | Time |
+|---------|------|
+| paths (10k) | 87.92 ms |
+
+## Why os_sorted is Slower
+
+os_sorted splits paths into OS components and applies locale-aware comparison
+(ICU/CF locale). The per-character normalization and extension handling adds
+roughly 10× overhead vs. plain natsorted.
 
 ## Methodology
 
-- All benchmarks use Criterion.rs statistical analysis
-- 100 samples per benchmark configuration
-- Outliers filtered automatically
-- Warm-up runs included
-- Tests generated random filenames matching real-world patterns (file10.txt, img2.png, etc.)
-- Release build optimizations enabled (`cargo bench`)
+- Criterion.rs: warm-up 0.4s, measurement 10s, sample size 10
+- Each dataset is randomly generated once (seeded via fastrand)
+- Python benchmarks use PyO3 to call `natsort.natsorted()` / `natsort.os_sorted()`
+  from within the same Criterion harness, ensuring identical hardware/thermal
+  conditions for fair comparison
+- Startup overhead measured by sorting 1 element (isolates process init + alloc)
+- Peak RSS measured via `/proc/PID/status` VmRSS polling during bench run
 
-## Running Benchmarks Locally
+## Running Locally
 
 ```bash
-cargo bench --bench natsort_bench
+source ../python_src/venv/bin/activate
+./scripts/bench.sh              # rust only (python if natsort importable)
+./scripts/bench.sh --clean      # clear criterion cache for fresh baseline
+./scripts/bench.sh --group rust # only rust/
 ```
 
-Note: Full benchmark suite may take several minutes for large datasets.
+Outputs:
+- `bench-metrics/bench.log` — full Criterion output
+- `bench-metrics/results.json` — structured data (median, RSS, startup, speedup ratios)
