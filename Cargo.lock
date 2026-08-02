@@ -306,6 +306,7 @@ dependencies = [
  "criterion",
  "fastrand",
  "pyo3",
+ "rayon",
  "regex",
  "thiserror",
  "unicase",

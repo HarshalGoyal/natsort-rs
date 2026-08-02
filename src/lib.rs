@@ -23,6 +23,8 @@
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
 
+use rayon::prelude::*;
+
 pub mod bytes;
 pub mod error;
 pub mod keygen;
@@ -62,11 +64,18 @@ pub use segment::NatsortKeyPart;
 /// ```
 pub fn natsorted(items: &[&str]) -> Vec<String> {
     let key_gen = NatsortKey::default();
-    let mut indexed: Vec<_> = items.iter().enumerate().collect();
-    indexed.sort_by(|&(_, &a), &(_, &b)| {
-        key_gen.key(a).cmp(&key_gen.key(b))
-    });
-    indexed.into_iter().map(|(_, item)| item.to_string()).collect()
+    // decorate-sort-undecorate: compute each key exactly once (in parallel)
+    // instead of re-deriving it on every comparator call (O(n log n)).
+    let mut decorated: Vec<(Vec<NatsortKeyPart>, usize, &str)> = items
+        .par_iter()
+        .enumerate()
+        .map(|(i, item)| (key_gen.key(item), i, *item))
+        .collect();
+    decorated.sort_by(|a, b| a.0.cmp(&b.0).then_with(|| a.1.cmp(&b.1)));
+    decorated
+        .into_iter()
+        .map(|(_, _, item)| item.to_string())
+        .collect()
 }
 
 /// Sort a slice of string-like items with custom flags.
@@ -90,7 +99,7 @@ pub fn natsorted(items: &[&str]) -> Vec<String> {
 /// ```
 pub fn natsorted_with(items: &[&str], flags: NsFlags) -> Vec<String> {
     // Apply PRESORT: pre-sort by string value to establish tiebreaker order.
-    let mut indexed: Vec<(usize, &str)> = if flags.contains(NsFlags::PRESORT) {
+    let indexed: Vec<(usize, &str)> = if flags.contains(NsFlags::PRESORT) {
         let mut indexed_items: Vec<(usize, &str)> =
             items.iter().enumerate().map(|(i, &item)| (i, item)).collect();
         indexed_items.sort_by(|&(_, a), &(_, b)| a.cmp(b));
@@ -105,14 +114,17 @@ pub fn natsorted_with(items: &[&str], flags: NsFlags) -> Vec<String> {
     };
 
     let key_gen = NatsortKey::new(flags);
-    // Use stable sort with presort index as tiebreaker.
-    indexed.sort_by(|&(idx_a, a), &(idx_b, b)| {
-        match key_gen.key(a).cmp(&key_gen.key(b)) {
-            core::cmp::Ordering::Equal => idx_a.cmp(&idx_b),
-            ord => ord,
-        }
-    });
-    indexed.into_iter().map(|(_, item)| item.to_string()).collect()
+    // decorate-sort-undecorate using the pre-sorted index as the tiebreaker.
+    // Keys are computed once (in parallel), not per comparison.
+    let mut decorated: Vec<(Vec<NatsortKeyPart>, usize, &str)> = indexed
+        .into_par_iter()
+        .map(|(idx, item)| (key_gen.key(item), idx, item))
+        .collect();
+    decorated.sort_by(|a, b| a.0.cmp(&b.0).then_with(|| a.1.cmp(&b.1)));
+    decorated
+        .into_iter()
+        .map(|(_, _, item)| item.to_string())
+        .collect()
 }
 
 /// Reverse the sort order: largest elements first.
@@ -129,11 +141,18 @@ pub fn natsorted_with(items: &[&str], flags: NsFlags) -> Vec<String> {
 /// ```
 pub fn natsorted_rev(items: &[&str]) -> Vec<String> {
     let key_gen = NatsortKey::default();
-    let mut indexed: Vec<_> = items.iter().enumerate().collect();
-    indexed.sort_by(|&(_, &a), &(_, &b)| {
-        key_gen.key(b).cmp(&key_gen.key(a))
-    });
-    indexed.into_iter().map(|(_, item)| item.to_string()).collect()
+    // decorate-sort-undecorate, comparing keys in reverse; equal keys keep
+    // their original relative order (stable) exactly like the old sort_by.
+    let mut decorated: Vec<(Vec<NatsortKeyPart>, usize, &str)> = items
+        .par_iter()
+        .enumerate()
+        .map(|(i, item)| (key_gen.key(item), i, *item))
+        .collect();
+    decorated.sort_by(|a, b| b.0.cmp(&a.0).then_with(|| a.1.cmp(&b.1)));
+    decorated
+        .into_iter()
+        .map(|(_, _, item)| item.to_string())
+        .collect()
 }
 
 /// Sort a slice of string-like items using real-number parsing (signed floats).
