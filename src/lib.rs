@@ -30,6 +30,7 @@ pub mod locale;
 pub mod mixed;
 pub mod ns;
 pub mod os_sort;
+pub mod path;
 pub mod recursive;
 pub mod segment;
 pub mod unicode_numbers;

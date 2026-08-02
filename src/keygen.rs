@@ -68,13 +68,12 @@ impl NatsortKey {
         };
 
         let parts = if self.flags.contains(NsFlags::PATH) {
-            // PATH mode: split by directory separators, apply key to each component.
+            // PATH mode: split by Python's `pathlib.PurePath` semantics
+            // (absolute root kept, `.`/empty dropped, `..` kept, extensions
+            // split off the base), then apply the key to each component.
             let mut all_parts = Vec::new();
-            for component in transformed.split(['/', '\\']) {
-                if component.is_empty() {
-                    continue;
-                }
-                let comp_parts = self.split_key(component);
+            for component in crate::path::path_splitter(&transformed) {
+                let comp_parts = self.split_key(&component);
                 all_parts.extend(comp_parts);
             }
             all_parts

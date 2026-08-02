@@ -1,196 +1,212 @@
 # natsort-rs: Rust port of Python's natsort library
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Rust](https://img.shields.io/badge/Rust.2024-blue.svg)](https://www.rust-lang.org/)
+[![Rust 2024](https://img.shields.io/badge/Rust-2024-blueviolet.svg)](https://www.rust-lang.org/)
 
 ## Project Status
 
-**Overall parity estimate: 100%** (all 344 Python tests pass, all 159 Rust tests pass)
+**Python reference suite: 344 / 344 pass · Rust `cargo test`: 175 / 175 pass (0 failed, 0 ignored)**
 
-The Rust implementation achieves nearly complete behavioral parity with Python's natsort library. All core functionality is implemented and passes extensive testing.
+`natsort-rs` is a Rust port of the
+[SethMMorton/natsort](https://github.com/SethMMorton/natsort) Python library.
+Natural sorting orders strings so that embedded numbers are compared
+numerically rather than lexicographically:
 
-## 🚀 Features
+```text
+file1.txt, file2.txt, file10.txt     (natural order)
+file1.txt, file10.txt, file2.txt     (plainly dictionary order)
+```
 
-## ✅ Fully Implemented
-- **Core Natural Sorting**: `natsorted()`, `natsorted_with()`
-- **Real Number Sorting**: `realsorted()` with signed floats
-- **Case-Insensitive Sorting**: `IGNORECASE` flag support
-- **Path-Aware Sorting**: `PATH` flag, `os_sorted()` for filesystem paths
-- **Mixed Type Sorting**: `natsorted_mixed()` for strings, integers, floats
-- **Bytes Sorting**: `natsorted_bytes()` for binary data
-- **Recursive Descent**: `natsorted_recursive()` for nested structures
-- **All 14 Python Flags** with identical bit values:
-  - `FLOAT` (0x1), `SIGNED` (0x2), `NOEXP` (0x4), `PATH` (0x8)
-  - `LOCALEALPHA` (0x10), `LOCALENUM` (0x20), `IGNORECASE` (0x40)
-  - `LOWERCASEFIRST` (0x80), `GROUPLETTERS` (0x100), `UNGROUPLETTERS` (0x200)
-  - `NANLAST` (0x400), `COMPATIBILITYNORMALIZE` (0x800)
-  - `NUMAFTER` (0x1000), `PRESORT` (0x2000)
-- **Composite Flags**: `REAL` (`FLOAT | SIGNED`), `LOCALE` (`LOCALEALPHA | LOCALENUM`)
-- **CLI Interface**: `natsort` command-line tool (`src/main.rs`)
-- **Unicode Support**: `unicode_numbers.rs` with character sets + Unicode digit parsing
-- **Fastnumbers Compatibility**: Basic `fastnumbers.rs` module
+The port is verified against the original Python implementation, including a
+differential corpus where Rust and Python must agree byte-for-byte.
 
-### 🔧 Partially Implemented
-- **Locale Support**: Basic `LOCALEALPHA` (unicase), `LOCALENUM` (thousands separator removal)
-- **Unicode Classification**: Common scripts supported (Arabic, Persian, Devanagari, Bengali, Tamil)
+## Features
 
-### 📋 Missing Features
-- Full system locale integration (thousands/decimal point detection)
-- Complete `fastnumbers.py` behavior (C extension optimizations)
-- `unicode_numeric_hex.py` hexadecimal number handling
-- All Python-specific edge cases and special behaviors
+### Core functionality
+- **Natural sorting**: `natsorted`, `natsorted_with`
+- **Real-number sorting**: `realsorted` (signed floats)
+- **Reverse + composite flags**: `natsorted_rev`
+- **Path-aware sorting**: `PATH` flag and `os_sorted` for filesystems paths
+- **Mixed-type sorting**: `natsorted_mixed` (strings, ints, floats)
+- **Byte sorting**: `natsorted_bytes`
+- **Recursive descent**: `natsorted_recursive` for nested structures
+- **Key factories**: `natsort_keygen`, `NatsortKey`, `NatsortKeyPart`
 
-## 📊 Performance
+### Flags
+All 14 Python `ns` flags, with bit values identical to Python's `ns_enum.py`:
 
-| Benchmark | Rust `natsort-rs` | Python `natsort` | Speedup |
-|-----------|-------------------|------------------|---------|
-| Sort 10k strings | ~130ms | ~2,500ms | **19x faster** |
-| Memory usage | ~15MB | ~120MB | **8x less** |
-| Startup time | ~0.1ms | ~50ms | **500x faster** |
-| Binary size | 2MB standalone | Requires Python | N/A |
+```
+FLOAT 0x001  SIGNED 0x002  NOEXP 0x004        PATH 0x008
+LOCALEALPHA 0x010  LOCALENUM 0x020  IGNORECASE 0x040
+LOWERCASEFIRST 0x080  GROUPLETTERS 0x100  UNGROUPLETTERS 0x200
+NANLAST 0x400  COMPATIBILITYNORMALIZE 0x800  NUMAFTER 0x1000  PRESORT 0x2000
+```
 
-## 🔄 Implementation Details
+Composite flags: `REAL = FLOAT | SIGNED`, `LOCALE = LOCALEALPHA | LOCALENUM`.
 
-### Core Algorithm
-The Rust port maintains Python's exact algorithm:
-- **Sentinel-based key generation**: Empty string `''` prepended when input starts with number
-- **No cross-type comparisons**: Strings vs numbers never directly compared
-- **Same tuple-position alignment**: Identical to Python's `sep_inserter`
-- **Flag-compatible regex**: Six regex patterns based on `NsFlags`
+### Additional surface
+- **CLI tool**: `natsort` binary (`src/main.rs`) with `-i/-r/-f` and stdin
+- **Unicode digit support**: `unicode_numbers`
+- **fastnumbers-compatible number parsing**: `fastnumbers`
 
-### Key Differences
-- **PATH mode**: Flattened `Vec<NatsortKeyPart>` instead of nested tuples (same comparison results)
-- **Locale support**: `unicase` crate instead of system locale APIs
-- **Fastnumbers**: Basic Rust parsing instead of C extensions
-- **Unicode numbers**: Custom mapping for common scripts instead of full `unicodedata`
+## Implementation notes
 
-## 🧪 Testing
+The algorithm mirrors Python's exactly: sentinel key generation, no
+cross-type comparison, same tuple-position alignment, and the same set of
+regex-driven number splits.
 
-The parity suite bridges to the **original Python `natsort`** (via `pyo3`) and asserts byte-for-byte identical output. The Python source is *not* vendored in this repo — it is the upstream `SethMMorton/natsort` checkout kept as a sibling directory (`../python_src`).
+Faithful low-level ports worth calling out:
+- `src/path.rs::path_splitter` reproduces `natsort.utils.path_splitter`,
+  including the subtle CPython `PurePath.suffixes` + `base.replace(...)`
+  semantics (double-dot names such as `a..gz`). See
+  [DECISIONS.md](DECISIONS.md).
 
-### Prerequisites — replicate the Python reference
+Some deliberate divergences are documented in
+[DECISIONS.md](DECISIONS.md) rather than being hidden.
 
-The Python reference is the upstream repo, used only as a test oracle. To reproduce it:
+## Testing
+
+The parity suite bridges to the **original Python `natsort`** (via `pyo3`) and
+asserts identical output. Python is *not* vendored; the reference checkout is
+kept as a sibling directory (`../python_src`) and used only as a test oracle.
+
+### Prerequisites — get the Python reference
 
 ```bash
 # 1. Clone the original library as a sibling of this crate
 git clone https://github.com/SethMMorton/natsort.git ../python_src
 
-# 2. Create a venv and install natsort + test dependencies
+# 2. Venv + install natsort and test dependencies
 cd ../python_src
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -e . pytest pytest-mock pyo3
 
-# 3. Generate the locales the locale-tests require
-sudo localedef -i en_US -f UTF-8 en_US.UTF-8   # (one-time, if missing)
+# 3. Generate the locales the locale tests require (one-time, if missing)
+sudo localedef -i en_US -f UTF-8 en_US.UTF-8
 sudo localedef -i de_DE -f UTF-8 de_DE.UTF-8
 sudo localedef -i cs_CZ -f UTF-8 cs_CZ.UTF-8
 ```
 
-### Python Tests
-- **344 tests executed** (all pass, no skips)
+### Counts
 
-### Rust Tests
-- **87 unit tests** (all pass)
-- **36 broad-parity tests** (direct Python vs Rust comparison via `pyo3`)
-- **22 integration tests** (all pass)
-- **14 doc tests** (all pass)
+The Python number (344) is the reference suite from upstream `natsort`. The
+Rust suite does **not** re-run that set verbatim; it has its own organization
+(unit, parity, integration, doctests). The full `cargo test` run currently
+reports **175 run / 175 passed / 0 failed / 0 ignored**:
 
-### Test Commands
-Run from `natsort-rs` with the Python venv activated (so `pyo3` can import `natsort`):
+| Suite | Run | Passed | Failed | Ignored |
+|-------|-----|--------|--------|---------|
+| `src/lib.rs` unit tests | 102 | 102 | 0 | 0 |
+| `tests/broad_parity.rs` (direct py vs Rust via `pyo3`) | 36 | 36 | 0 | 0 |
+| `tests/parity.rs` integration | 22 | 22 | 0 | 0 |
+| `tests/parity_suite.rs` behavioral differential | 1 | 1 | 0 | 0 |
+| doctests | 14 | 14 | 0 | 0 |
+| `src/main.rs` unit tests | 0 | 0 | 0 | 0 |
+| **Total** | **175** | **175** | **0** | **0** |
+
+Run the summary yourself from `natsort-rs`:
 
 ```bash
-# 1. Activate the reference Python environment
+cargo test 2>&1 | grep -E "test result:"
+```
+
+### The "deciding factor": behavioral differential (`parity_suite`)
+
+`tests/parity_suite.rs` replays the **behavioral** tests of the upstream suite
+against the Rust implementation and is the parity gate. Its current report:
+
+```text
+Python reference suite total           : 344
+behavioural module tests               : 69   (natsorted / convenience / os_sorted)
+Python-internal-only (no Rust mirror)  : 275
+total differential cases compared      : 40
+core (non-locale) cases                : 28   matched = 28   mismatched = 0
+locale cases (known partial impl)      : 12   matched = 4    divergent = 8
+```
+
+- **Core behaviour (non-locale) is 100% parity** — every captured
+  `natsorted` / `realsorted` / `os_sorted` call matches Python exactly.
+- The 8 divergent cases are all **locale**-flag inputs
+  (`LOCALEALPHA` / `LOCALENUM`), a documented partial implementation (see
+  [DECISIONS.md](DECISIONS.md)).
+- 275 of the 344 reference tests exercise Python's *internals* (regex tables,
+  `ns` enum mechanics, transform factories) and have no 1:1 Rust counterpart.
+
+The harness fails loudly if any **core** (non-locale) case diverges, so it is
+the honest line for "does Rust match Python".
+
+### Commands (run from `natsort-rs` with the Python venv active)
+
+```bash
+# 1. Activate the reference environment
 source ../python_src/.venv/bin/activate
 
-# 2. Rust unit + parity + integration + doc tests
+# 2. Rust unit + parity + integration + doctests
 cargo test
 
-# 3. Broad parity tests only
+# 3. Broad parity only
 cargo test --test parity
 
 # 4. Python reference tests
-cd ../python_src && python -m pytest tests/ -v
+(cd ../python_src && python -m pytest tests/ -v)
 
-# 5. CLI interface
-cd ../natsort-rs && cargo run -- -h
+# 5. CLI
+cargo run -- -h
 ```
 
-> The parity harness fails loudly (rather than silently skipping) if `natsort` cannot be imported; activate the venv from step 2 above before running `cargo test`.
+> The parity harness fails loudly (rather than silently skipping) if `natsort`
+> cannot be imported; activate the venv from step 1 before `cargo test`.
 
-## 📚 API Reference
+## Quick example
 
-### Core Functions
 ```rust
-// Basic sorting
-pub fn natsorted<T: AsRef<str>>(items: &[T]) -> Vec<T>
-pub fn natsorted_with<T: AsRef<str>>(items: &[T], flags: NsFlags) -> Vec<T>
-pub fn realsorted<T: AsRef<str>>(items: &[T]) -> Vec<T>
+use natsort::natsorted;
 
-// Specialized sorting  
-pub fn os_sorted<T: AsRef<str>>(items: &[T]) -> Vec<T>
-pub fn natsorted_mixed(items: &[Item]) -> Vec<Item>
-pub fn natsorted_bytes(bytes: &[Vec<u8>]) -> Vec<Vec<u8>>
-pub fn natsorted_recursive(items: &[NestedItem]) -> Vec<NestedItem>
-```
-
-### Key Generation
-```rust
-pub struct NatsortKey {
-    pub fn new(flags: NsFlags) -> Self;
-    pub fn key(&self, input: &str) -> Vec<NatsortKeyPart>;
+fn main() {
+    let items = ["item2", "item10", "item1"];
+    assert_eq!(natsorted(&items), ["item1", "item2", "item10"]);
 }
 ```
 
-### CLI Usage
-```bash
-# Sort files
-natsort file1.txt file10.txt file2.txt
+## Documentation
 
-# Case-insensitive from stdin  
-cat input.txt | natsort -i
+- **`DECISIONS.md`** — every deliberate divergence from Python and the
+  reasoning behind it.
+- **`benchmarks.md`** — benchmark methodology and the `cargo bench` results.
 
-# Real number sorting
-natsort -f numbers.txt
-```
+## Technical details
 
-## 📄 Documentation
-
-- **`DECISIONS.md`** — deliberate divergences from the Python original and the reasoning behind each
-- **`PORT_PLAN.md`** — port scope, parity estimate, and implementation status
-- **`src/lib.rs`** — module-level documentation for the public API
-
-## 🔧 Technical Details
-
-**Dependencies**:
-. `bitflags` (flag management)
-. `regex` (pattern matching)
-. `unicase` (locale-aware sorting)
-. `pyo3` (parity testing)
-. `thiserror` (error handling)
+**Dependencies** (`Cargo.toml`): `bitflags`, `regex`, `unicase`, `thiserror`;
+dev: `criterion`, `fastrand`, `pyo3`.
 
 **Architecture**:
-- **`src/keygen.rs`**: Core algorithm with sentinel insertion
-- **`src/segment.rs`**: Number/string segmentation logic
-- **`src/locale.rs`**: Locale-aware transformations
-- **`src/ns.rs`**: Flag definitions matching Python `ns_enum.py`
-- **`src/unicode_numbers.rs`**: Unicode character sets
-- **`src/fastnumbers.rs`**: Fastnumbers compatibility
 
-## 📝 Origin
+- `src/lib.rs` — public API and module wiring
+- `src/keygen.rs` — core key-generation algorithm
+- `src/segment.rs` — number/string segmentation
+- `src/path.rs` — faithful `path_splitter` port (POSIX path components)
+- `src/os_sort.rs` — `os_sorted` / `os_sort_key`
+- `src/ns.rs` — flag definitions matching Python's `ns_enum.py`
+- `src/bytes.rs` / `src/mixed.rs` / `src/recursive.rs` — type-specific sorting
+- `src/locale.rs` — locale-aware transforms
+- `src/unicode_numbers.rs` / `src/fastnumbers.rs` — number support
+- `src/main.rs` — CLI
+- `fuzz/fuzz_targets/` — cargo-fuzz targets (differential + plain)
+- `benches/` + `benchmarks.md` — criterion benchmarks
 
-This project is a Rust port of the [SethMMorton/natsort](https://github.com/SethMMorton/natsort) Python library. The goal is full behavioral parity with the original:
+## Origin
 
-. **Original Repository**: [SethMMorton/natsort](https://github.com/SethMMorton/natsort) (Python)
-. **Ported Language**: Rust
-. **Parity Goal**: 100% behavioral compatibility achieved (all 344 Python + 159 Rust tests pass)
+A Rust port of [SethMMorton/natsort](https://github.com/SethMMorton/natsort).
+Goal: behavioral parity with the original. The parity harness drives the suite
+against the real Python library.
 
-## 📄 License
+## License
 
 MIT — same as the original `natsort`.
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
-- [SethMMorton/natsort](https://github.com/SethMMorton/natsort) — The original Python library this crate ports.
-- [Port Mortem 2026](https://portmortem.devfolio.co/) — Hackathon organizers
+- [SethMMorton/natsort](https://github.com/SethMMorton/natsort) — the original
+  Python library.
+- [Port Mortem 2026](https://portmortem.devfolio.co/) — hackathon organizers.
