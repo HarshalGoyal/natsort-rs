@@ -20,8 +20,10 @@ All times are Criterion median (ms) for 10k–20k items.
 
 | Metric | Value | Notes |
 |--------|-------|-------|
-| Startup overhead | ~2 ms | Measured by sorting 1 element (process init + alloc) |
-| Peak RSS | measured per run | Reported in `bench-metrics/results.json` |
+| Startup overhead (median) | 97.87 µs | Measured by sorting 1 element (process init + alloc) |
+| Startup overhead (p99) | 103 µs | `startup_p99_ms` in results.json |
+| Peak RSS | ~38,564 KiB | Reported as `rss_kb` in `bench-metrics/results.json` |
+| p99 latency | per benchmark | `rust_p99_ms` / `python_p99_ms` in results.json |
 
 See `bench-metrics/results.json` for structured data with all benchmarks and metrics.
 

@@ -25,15 +25,19 @@ Central tendency of measured time across samples. Reported as
 
 ### p99 (99th percentile)
 
-Extracted from Criterion's raw sample files (`target/criterion/*/new/sample.json`).
+Extracted from Criterion's raw sample files (`target/criterion/*/new/sample.json`),
+computed per-iteration from cumulative `times`/`iters`, then linearly
+interpolated at the 99th percentile. Reported per benchmark as
+`rust_p99_ms` / `python_p99_ms`, and top-level as `startup_p99_ms`.
 With n=10 samples, p99 approximates the worst-case measurement. Useful for
 understanding tail latency characteristics.
 
 ### RSS (resident set size)
 
-Peak memory usage measured via `/usr/bin/time -v` wrapping the entire
-`cargo bench` process. Reported in KiB. Represents the high-water mark
-across all benchmarks in a single run — not per-benchmark.
+Peak memory usage measured by polling `/proc/<pid>/status` (VmRSS) while the
+`cargo bench` process runs in the background. Reported in KiB as `rss_kb`.
+Represents the high-water mark across all benchmarks in a single run — not
+per-benchmark.
 
 ### Startup time
 
@@ -65,4 +69,5 @@ source ../python_src/venv/bin/activate
 ./scripts/bench.sh --clean
 ```
 
-Results written to `bench.log` (full output) and `bench/results.json` (structured).
+Results written to `bench-metrics/bench.log` (full output) and
+`bench-metrics/results.json` (structured, incl. p99).

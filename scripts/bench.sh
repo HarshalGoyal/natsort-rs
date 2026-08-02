@@ -201,6 +201,13 @@ END {
 }
 ' <(tr '\r' '\n' < "$LOG.raw") > "$RESULTS_JSON"
 
+# ── Merge p99 (ms) from Criterion raw samples ───────────────────────
+if command -v python3 >/dev/null 2>&1; then
+    python3 scripts/bench_p99.py "$RESULTS_JSON" target/criterion
+else
+    echo "warning: python3 not found; p99 metrics omitted from $RESULTS_JSON" >&2
+fi
+
 rm -f "$LOG.raw"
 echo "" >&2
 echo "Results written to $RESULTS_JSON" >&2
