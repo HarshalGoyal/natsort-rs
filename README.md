@@ -66,31 +66,58 @@ The Rust port maintains Python's exact algorithm:
 
 ## 🧪 Testing
 
+The parity suite bridges to the **original Python `natsort`** (via `pyo3`) and asserts byte-for-byte identical output. The Python source is *not* vendored in this repo — it is the upstream `SethMMorton/natsort` checkout kept as a sibling directory (`../python_src`).
+
+### Prerequisites — replicate the Python reference
+
+The Python reference is the upstream repo, used only as a test oracle. To reproduce it:
+
+```bash
+# 1. Clone the original library as a sibling of this crate
+git clone https://github.com/SethMMorton/natsort.git ../python_src
+
+# 2. Create a venv and install natsort + test dependencies
+cd ../python_src
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e . pytest pytest-mock pyo3
+
+# 3. Generate the locales the locale-tests require
+sudo localedef -i en_US -f UTF-8 en_US.UTF-8   # (one-time, if missing)
+sudo localedef -i de_DE -f UTF-8 de_DE.UTF-8
+sudo localedef -i cs_CZ -f UTF-8 cs_CZ.UTF-8
+```
+
 ### Python Tests
-   - **344 tests executed** (all pass, no skips)
-   - **`pytest-mock` installed** and `cs_CZ` locale generated — full CLI + locale coverage
-   - **All locale tests pass** (locales installed: `en_US.utf8`, `de_DE.utf8`)
+- **344 tests executed** (all pass, no skips)
 
 ### Rust Tests
-   - **87 unit tests** (all pass)
-   - **36 broad-parity tests** (direct Python vs Rust comparison via `pyo3`)
-   - **22 integration tests** (all pass)
-   - **14 doc tests** (all pass)
+- **87 unit tests** (all pass)
+- **36 broad-parity tests** (direct Python vs Rust comparison via `pyo3`)
+- **22 integration tests** (all pass)
+- **14 doc tests** (all pass)
 
 ### Test Commands
+Run from `natsort-rs` with the Python venv activated (so `pyo3` can import `natsort`):
+
 ```bash
-# Python tests
-cd python_src && python -m pytest tests/ -v
+# 1. Activate the reference Python environment
+source ../python_src/.venv/bin/activate
 
-# Rust tests  
-cd natsort-rs && cargo test
+# 2. Rust unit + parity + integration + doc tests
+cargo test
 
-# Broad parity tests
-cd natsort-rs && cargo test --test parity
+# 3. Broad parity tests only
+cargo test --test parity
 
-# CLI interface
-cd natsort-rs && cargo run -- -h
+# 4. Python reference tests
+cd ../python_src && python -m pytest tests/ -v
+
+# 5. CLI interface
+cd ../natsort-rs && cargo run -- -h
 ```
+
+> The parity harness fails loudly (rather than silently skipping) if `natsort` cannot be imported; activate the venv from step 2 above before running `cargo test`.
 
 ## 📚 API Reference
 
@@ -130,10 +157,9 @@ natsort -f numbers.txt
 
 ## 📄 Documentation
 
-- **`DECISIONS.md`**: All intentional differences from Python
-- **`PORT_PLAN.md`**: Implementation status and parity details
-- **`Cargo.toml`**: Dependencies and configuration
-- **`src/lib.rs`**: Core library documentation
+- **`DECISIONS.md`** — deliberate divergences from the Python original and the reasoning behind each
+- **`PORT_PLAN.md`** — port scope, parity estimate, and implementation status
+- **`src/lib.rs`** — module-level documentation for the public API
 
 ## 🔧 Technical Details
 
@@ -152,12 +178,12 @@ natsort -f numbers.txt
 - **`src/unicode_numbers.rs`**: Unicode character sets
 - **`src/fastnumbers.rs`**: Fastnumbers compatibility
 
-## 📝 Port Mortem 2026
+## 📝 Origin
 
-This project was created for the **Port Mortem 2026** Hackathon (Code Resurrection Wave 2):
+This project is a Rust port of the [SethMMorton/natsort](https://github.com/SethMMorton/natsort) Python library. The goal is full behavioral parity with the original:
+
 . **Original Repository**: [SethMMorton/natsort](https://github.com/SethMMorton/natsort) (Python)
 . **Ported Language**: Rust
-. **Track**: Code Resurrection (Python → Rust)
 . **Parity Goal**: 100% behavioral compatibility achieved (all 344 Python + 159 Rust tests pass)
 
 ## 📄 License
@@ -166,6 +192,5 @@ MIT — same as the original `natsort`.
 
 ## 🙏 Acknowledgments
 
-- [SethMMorton/natsort](https://github.com/SethMMorton/natsort) — Original Python implementation
-- [Port Mortem 2026](https://devfolio.co/) — Hackathon organizers
-- [Code Resurrection Wave 2](https://devfolio.co/) — Track
+- [SethMMorton/natsort](https://github.com/SethMMorton/natsort) — The original Python library this crate ports.
+- [Port Mortem 2026](https://portmortem.devfolio.co/) — Hackathon organizers
