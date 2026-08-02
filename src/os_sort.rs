@@ -6,6 +6,7 @@
 use crate::keygen::NatsortKey;
 use crate::ns::NsFlags;
 use crate::segment::NatsortKeyPart;
+use rayon::prelude::*;
 
 /// Generate a sort key for an OS path.
 ///
@@ -18,15 +19,9 @@ use crate::segment::NatsortKeyPart;
 /// that Python's nested-tuple comparison relies on.
 pub fn os_sort_key(path: &str) -> Vec<Vec<NatsortKeyPart>> {
     let components = split_path_components(path);
-    let mut component_keys = Vec::new();
-
-    for component in components {
-        let kg = NatsortKey::new(NsFlags::LOCALE | NsFlags::PATH | NsFlags::IGNORECASE);
-        let parts = kg.key(component);
-        component_keys.push(parts);
-    }
-
-    component_keys
+    // Reuse a single key generator across all components of this path.
+    let kg = NatsortKey::new(NsFlags::LOCALE | NsFlags::PATH | NsFlags::IGNORECASE);
+    components.into_iter().map(|component| kg.key(component)).collect()
 }
 
 /// Compare two OS sort keys component-by-component.
@@ -131,11 +126,20 @@ fn split_extension(filename: &str) -> (&str, Vec<&str>) {
 /// ]);
 /// ```
 pub fn os_sorted(items: &[&str]) -> Vec<String> {
-    let mut indexed: Vec<_> = items.iter().enumerate().collect();
-    indexed.sort_by(|&(_, &a), &(_, &b)| {
-        os_key_cmp(&os_sort_key(a), &os_sort_key(b))
+    // decorate-sort-undecorate: compute each OS sort key exactly once (in
+    // parallel) instead of regenerating it on every comparator call.
+    let mut decorated: Vec<(Vec<Vec<NatsortKeyPart>>, usize, &str)> = items
+        .par_iter()
+        .enumerate()
+        .map(|(i, item)| (os_sort_key(item), i, *item))
+        .collect();
+    decorated.sort_by(|a, b| {
+        os_key_cmp(&a.0, &b.0).then_with(|| a.1.cmp(&b.1))
     });
-    indexed.into_iter().map(|(_, item)| item.to_string()).collect()
+    decorated
+        .into_iter()
+        .map(|(_, _, item)| item.to_string())
+        .collect()
 }
 
 /// Generate a reusable OS sort key function.
